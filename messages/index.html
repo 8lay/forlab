@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Messages | Forlab</title>
+  <style>
+    :root {
+      --bg: #090d1a;
+      --surface: rgba(18, 27, 52, .78);
+      --surface-strong: #121b34;
+      --text: #f5f7ff;
+      --muted: #aab4d0;
+      --accent: #8b7cff;
+      --accent-2: #43d9c5;
+      --border: rgba(255, 255, 255, .12);
+      --danger: #ff8e9e;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(139, 124, 255, .24), transparent 35%),
+        radial-gradient(circle at 90% 80%, rgba(67, 217, 197, .12), transparent 32%),
+        var(--bg);
+    }
+
+    .shell { width: min(940px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0; }
+    .brand { color: var(--accent-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 10px 0 8px; font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: 1; }
+    .subtitle { color: var(--muted); margin: 0 0 32px; }
+    .panel, .message {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .panel { max-width: 430px; padding: 28px; }
+    label { display: block; margin: 16px 0 7px; color: var(--muted); font-size: .9rem; }
+    input {
+      width: 100%; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px;
+      color: var(--text); background: rgba(0, 0, 0, .2); font: inherit;
+    }
+    input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    button {
+      margin-top: 22px; border: 0; border-radius: 12px; padding: 13px 18px;
+      color: white; background: linear-gradient(135deg, var(--accent), #6657e8);
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
+    button:disabled { cursor: wait; opacity: .65; }
+    .status { min-height: 24px; color: var(--danger); }
+    .toolbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin: 28px 0 18px; }
+    .toolbar button { margin: 0; padding: 9px 14px; }
+    .messages { display: grid; gap: 16px; }
+    .message { padding: 22px; }
+    .message-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .message-name { font-size: 1.15rem; font-weight: 700; }
+    .message-email, .message-date { color: var(--muted); font-size: .9rem; }
+    .message-body { margin: 18px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .empty { color: var(--muted); padding: 32px 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand">Forlab / private inbox</div>
+    <h1>Messages</h1>
+    <p class="subtitle">Messages sent through your portfolio, in one quiet place.</p>
+
+    <section id="login-view" class="panel">
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button id="login-button" type="submit">Open inbox</button>
+        <p id="login-status" class="status" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="inbox-view" hidden>
+      <div class="toolbar">
+        <div id="count" class="subtitle"></div>
+        <button id="logout-button" type="button">Log out</button>
+      </div>
+      <div id="messages" class="messages"></div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net";
+    const loginView = document.querySelector("#login-view");
+    const inboxView = document.querySelector("#inbox-view");
+    const loginForm = document.querySelector("#login-form");
+    const loginButton = document.querySelector("#login-button");
+    const loginStatus = document.querySelector("#login-status");
+    const messagesElement = document.querySelector("#messages");
+    const countElement = document.querySelector("#count");
+    const tokenKey = "forlab_admin_token";
+
+    function showLogin() {
+      loginView.hidden = false;
+      inboxView.hidden = true;
+    }
+
+    function showInbox() {
+      loginView.hidden = true;
+      inboxView.hidden = false;
+    }
+
+    function renderMessages(messages) {
+      countElement.textContent = `${messages.length} message${messages.length === 1 ? "" : "s"}`;
+      messagesElement.replaceChildren();
+
+      if (!messages.length) {
+        messagesElement.innerHTML = '<p class="empty">Your inbox is empty.</p>';
+        return;
+      }
+
+      for (const message of messages) {
+        const card = document.createElement("article");
+        card.className = "message";
+        const date = new Date(message.createdAt).toLocaleString();
+        card.innerHTML = `
+          <div class="message-head">
+            <div>
+              <div class="message-name"></div>
+              <div class="message-email"></div>
+            </div>
+            <div class="message-date"></div>
+          </div>
+          <p class="message-body"></p>
+        `;
+        card.querySelector(".message-name").textContent = message.name;
+        card.querySelector(".message-email").textContent = message.email;
+        card.querySelector(".message-date").textContent = date;
+        card.querySelector(".message-body").textContent = message.message;
+        messagesElement.append(card);
+      }
+    }
+
+    async function loadMessages(token) {
+      const response = await fetch(`${API_URL}/api/admin/messages`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.status === 401) {
+        sessionStorage.removeItem(tokenKey);
+        showLogin();
+        throw new Error("Your session expired. Please log in again.");
+      }
+      if (!response.ok) {
+        throw new Error("Unable to load messages.");
+      }
+
+      renderMessages(await response.json());
+      showInbox();
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      loginButton.disabled = true;
+      loginStatus.textContent = "";
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(Object.fromEntries(new FormData(loginForm)))
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Login failed.");
+        }
+
+        sessionStorage.setItem(tokenKey, result.token);
+        loginForm.reset();
+        await loadMessages(result.token);
+      } catch (error) {
+        loginStatus.textContent = error.message;
+      } finally {
+        loginButton.disabled = false;
+      }
+    });
+
+    document.querySelector("#logout-button").addEventListener("click", () => {
+      sessionStorage.removeItem(tokenKey);
+      showLogin();
+    });
+
+    const savedToken = sessionStorage.getItem(tokenKey);
+    if (savedToken) {
+      loadMessages(savedToken).catch((error) => {
+        loginStatus.textContent = error.message;
+      });
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>
