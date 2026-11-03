@@ -1,12 +1,16 @@
 import express from "express";
 import crypto from "node:crypto";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
 const port = process.env.PORT || 3000;
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+
 const allowedOrigins = new Set([
   "https://forlab.me",
   "https://www.forlab.me",
@@ -15,9 +19,15 @@ const allowedOrigins = new Set([
   "http://127.0.0.1:3000"
 ]);
 
+const execFileAsync = promisify(execFile);
+const isWindows = os.platform() === "win32";
+const ytDlpPath = isWindows
+    ? path.join(currentDirectory, "yt-dlp.exe")
+    : "yt-dlp";
+
 const client = process.env.MONGODB_URI
-  ? new MongoClient(process.env.MONGODB_URI)
-  : null;
+    ? new MongoClient(process.env.MONGODB_URI)
+    : null;
 let clientPromise;
 
 app.use(express.json({ limit: "20kb" }));
@@ -44,8 +54,8 @@ function safeEqual(left, right) {
   const rightBuffer = Buffer.from(right);
 
   return (
-    leftBuffer.length === rightBuffer.length &&
-    crypto.timingSafeEqual(leftBuffer, rightBuffer)
+      leftBuffer.length === rightBuffer.length &&
+      crypto.timingSafeEqual(leftBuffer, rightBuffer)
   );
 }
 
@@ -55,9 +65,9 @@ function createAdminToken() {
     expiresAt: Date.now() + 8 * 60 * 60 * 1000
   })).toString("base64url");
   const signature = crypto
-    .createHmac("sha256", process.env.SESSION_SECRET)
-    .update(payload)
-    .digest("base64url");
+      .createHmac("sha256", process.env.SESSION_SECRET)
+      .update(payload)
+      .digest("base64url");
 
   return `${payload}.${signature}`;
 }
@@ -73,9 +83,9 @@ function isAdminTokenValid(token) {
   }
 
   const expectedSignature = crypto
-    .createHmac("sha256", process.env.SESSION_SECRET)
-    .update(payload)
-    .digest("base64url");
+      .createHmac("sha256", process.env.SESSION_SECRET)
+      .update(payload)
+      .digest("base64url");
 
   if (!safeEqual(signature, expectedSignature)) {
     return false;
@@ -92,8 +102,8 @@ function isAdminTokenValid(token) {
 function requireAdmin(req, res, next) {
   const authorization = req.headers.authorization ?? "";
   const token = authorization.startsWith("Bearer ")
-    ? authorization.slice("Bearer ".length)
-    : null;
+      ? authorization.slice("Bearer ".length)
+      : null;
 
   if (!isAdminTokenValid(token)) {
     return res.status(401).json({ error: "Authentication required" });
@@ -114,10 +124,10 @@ app.post("/api/messages", async (req, res) => {
   const { name, email, message } = req.body ?? {};
 
   if (
-    typeof name !== "string" ||
-    typeof message !== "string" ||
-    !name.trim() ||
-    !message.trim()
+      typeof name !== "string" ||
+      typeof message !== "string" ||
+      !name.trim() ||
+      !message.trim()
   ) {
     return res.status(400).json({
       error: "Name and message are required"
@@ -125,10 +135,10 @@ app.post("/api/messages", async (req, res) => {
   }
 
   if (
-    (email !== undefined && typeof email !== "string") ||
-    (typeof email === "string" && email.length > 254) ||
-    name.length > 100 ||
-    message.length > 5000
+      (email !== undefined && typeof email !== "string") ||
+      (typeof email === "string" && email.length > 254) ||
+      name.length > 100 ||
+      message.length > 5000
   ) {
     return res.status(400).json({ error: "One or more fields are too long" });
   }
@@ -160,22 +170,54 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
+// ==========================================
+// MEDIA EXTRACTION API ROUTE
+// ==========================================
+app.post("/api/extract", async (req, res) => {
+  const { url } = req.body ?? {};
+
+  if (!url || typeof url !== "string" || !url.trim()) {
+    return res.status(400).json({ error: "Media URL is required" });
+  }
+
+  try {
+    const { stdout } = await execFileAsync(ytDlpPath, [
+      "-j",
+      "--no-playlist",
+      "--no-check-certificates",
+      url.trim()
+    ]);
+
+    const output = JSON.parse(stdout);
+
+    return res.json({
+      title: output.title || "downloaded_media",
+      downloadUrl: output.url,
+      thumbnail: output.thumbnail,
+      ext: output.ext || "mp4"
+    });
+  } catch (error) {
+    console.error("yt-dlp extraction failed:", error);
+    return res.status(500).json({ error: "Failed to extract media. Make sure the link is public." });
+  }
+});
+
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};
 
   if (
-    !process.env.ADMIN_USERNAME ||
-    !process.env.ADMIN_PASSWORD ||
-    !process.env.SESSION_SECRET
+      !process.env.ADMIN_USERNAME ||
+      !process.env.ADMIN_PASSWORD ||
+      !process.env.SESSION_SECRET
   ) {
     return res.status(500).json({ error: "Admin login is not configured" });
   }
 
   if (
-    typeof username !== "string" ||
-    typeof password !== "string" ||
-    !safeEqual(username, process.env.ADMIN_USERNAME) ||
-    !safeEqual(password, process.env.ADMIN_PASSWORD)
+      typeof username !== "string" ||
+      typeof password !== "string" ||
+      !safeEqual(username, process.env.ADMIN_USERNAME) ||
+      !safeEqual(password, process.env.ADMIN_PASSWORD)
   ) {
     return res.status(401).json({ error: "Invalid username or password" });
   }
@@ -195,12 +237,12 @@ app.get("/api/admin/messages", requireAdmin, async (_req, res) => {
     clientPromise ??= client.connect();
     const connectedClient = await clientPromise;
     const messages = await connectedClient
-      .db("forlab")
-      .collection("messages")
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .toArray();
+        .db("forlab")
+        .collection("messages")
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
 
     return res.json(messages);
   } catch (error) {
@@ -216,10 +258,10 @@ app.delete("/api/admin/messages", requireAdmin, async (req, res) => {
 
   const { ids } = req.body ?? {};
   if (
-    !Array.isArray(ids) ||
-    ids.length < 1 ||
-    ids.length > 100 ||
-    ids.some((id) => typeof id !== "string" || !ObjectId.isValid(id))
+      !Array.isArray(ids) ||
+      ids.length < 1 ||
+      ids.length > 100 ||
+      ids.some((id) => typeof id !== "string" || !ObjectId.isValid(id))
   ) {
     return res.status(400).json({ error: "Provide between 1 and 100 valid message IDs" });
   }
@@ -228,11 +270,11 @@ app.delete("/api/admin/messages", requireAdmin, async (req, res) => {
     clientPromise ??= client.connect();
     const connectedClient = await clientPromise;
     const result = await connectedClient
-      .db("forlab")
-      .collection("messages")
-      .deleteMany({
-        _id: { $in: ids.map((id) => new ObjectId(id)) }
-      });
+        .db("forlab")
+        .collection("messages")
+        .deleteMany({
+          _id: { $in: ids.map((id) => new ObjectId(id)) }
+        });
 
     return res.json({ deletedCount: result.deletedCount });
   } catch (error) {
