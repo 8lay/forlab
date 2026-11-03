@@ -70,6 +70,19 @@
     .message-email, .message-date { color: var(--muted); font-size: .9rem; }
     .message-body { margin: 18px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
     .empty { color: var(--muted); padding: 32px 0; }
+    .modal-backdrop {
+      position: fixed; inset: 0; display: grid; place-items: center; padding: 20px;
+      background: rgba(3, 5, 12, .72); backdrop-filter: blur(8px); z-index: 10;
+    }
+    .modal {
+      width: min(420px, 100%); padding: 28px; border: 1px solid var(--border);
+      border-radius: 22px; background: var(--surface-strong); box-shadow: var(--shadow);
+    }
+    .modal h2 { margin: 0 0 8px; }
+    .modal p { color: var(--muted); margin: 0; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .modal-actions button { margin: 0; }
+    .cancel-button { background: rgba(255, 255, 255, .1); }
     [hidden] { display: none !important; }
     body:not(.ready) main { visibility: hidden; }
   </style>
@@ -104,6 +117,17 @@
     </section>
   </main>
 
+  <div id="delete-modal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <h2 id="delete-title">Delete messages?</h2>
+      <p id="delete-description"></p>
+      <div class="modal-actions">
+        <button id="cancel-delete" class="cancel-button" type="button">Cancel</button>
+        <button id="confirm-delete" class="delete-button" type="button">Delete</button>
+      </div>
+    </section>
+  </div>
+
   <script>
     const API_URL = "https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net";
     const loginView = document.querySelector("#login-view");
@@ -115,6 +139,10 @@
     const countElement = document.querySelector("#count");
     const selectAll = document.querySelector("#select-all");
     const deleteButton = document.querySelector("#delete-button");
+    const deleteModal = document.querySelector("#delete-modal");
+    const deleteDescription = document.querySelector("#delete-description");
+    const cancelDelete = document.querySelector("#cancel-delete");
+    const confirmDelete = document.querySelector("#confirm-delete");
     const tokenKey = "forlab_admin_token";
 
     function showLogin() {
@@ -176,11 +204,24 @@
 
     async function deleteSelected() {
       const ids = selectedIds();
-      if (!ids.length || !confirm(`Delete ${ids.length} selected message${ids.length === 1 ? "" : "s"}?`)) {
+      if (!ids.length) {
         return;
       }
 
-      deleteButton.disabled = true;
+      deleteDescription.textContent =
+        `This will permanently delete ${ids.length} selected message${ids.length === 1 ? "" : "s"}.`;
+      deleteModal.hidden = false;
+      confirmDelete.focus();
+    }
+
+    async function confirmDeletion() {
+      const ids = selectedIds();
+      if (!ids.length) {
+        deleteModal.hidden = true;
+        return;
+      }
+
+      confirmDelete.disabled = true;
       try {
         const response = await fetch(`${API_URL}/api/admin/messages`, {
           method: "DELETE",
@@ -194,10 +235,13 @@
         if (!response.ok) {
           throw new Error(result.error || "Unable to delete messages.");
         }
+        deleteModal.hidden = true;
         await loadMessages(sessionStorage.getItem(tokenKey));
       } catch (error) {
-        alert(error.message);
+        deleteDescription.textContent = error.message;
         updateSelectionState();
+      } finally {
+        confirmDelete.disabled = false;
       }
     }
 
@@ -262,6 +306,15 @@
       }
     });
     deleteButton.addEventListener("click", deleteSelected);
+    cancelDelete.addEventListener("click", () => {
+      deleteModal.hidden = true;
+    });
+    confirmDelete.addEventListener("click", confirmDeletion);
+    deleteModal.addEventListener("click", (event) => {
+      if (event.target === deleteModal) {
+        deleteModal.hidden = true;
+      }
+    });
 
     const savedToken = sessionStorage.getItem(tokenKey);
     if (savedToken) {
