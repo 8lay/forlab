@@ -1,4 +1,6 @@
-node_modules/
+﻿node_modules/
+.idea/
+yt-dlp.exe
 .env
 .env.*
 !.env.example
