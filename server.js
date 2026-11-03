@@ -1,13 +1,7 @@
 import express from "express";
 import crypto from "node:crypto";
 import path from "node:path";
-import os from "node:os";
-import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { pipeline } from "node:stream/promises";
-import { Readable } from "node:stream";
 import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
@@ -21,44 +15,6 @@ const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
-
-const execFileAsync = promisify(execFile);
-const isWindows = os.platform() === "win32";
-
-async function getExecutablePath() {
-  if (isWindows) {
-    return path.join(currentDirectory, "yt-dlp.exe");
-  }
-
-  const tmpBinaryPath = "/tmp/yt-dlp";
-  const fileExists = fs.existsSync(tmpBinaryPath);
-
-  let isOld = false;
-  if (fileExists) {
-    const stats = fs.statSync(tmpBinaryPath);
-    const ageInHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-    if (ageInHours > 12) isOld = true;
-  }
-
-  if (!fileExists || isOld) {
-    try {
-      console.log("Fetching fresh Linux yt-dlp binary to /tmp...");
-      const response = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
-
-      if (response.ok) {
-        const fileStream = fs.createWriteStream(tmpBinaryPath);
-        await pipeline(Readable.fromWeb(response.body), fileStream);
-        fs.chmodSync(tmpBinaryPath, 0o755);
-      }
-    } catch (err) {
-      console.error("Failed to auto-update yt-dlp binary:", err);
-    }
-  }
-
-  return tmpBinaryPath;
-}
 
 const client = process.env.MONGODB_URI
     ? new MongoClient(process.env.MONGODB_URI)
@@ -206,7 +162,7 @@ app.post("/api/messages", async (req, res) => {
 });
 
 // ==========================================
-// MEDIA EXTRACTION ROUTE
+// MEDIA EXTRACTION ROUTE VIA COBALT API
 // ==========================================
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body ?? {};
@@ -216,43 +172,37 @@ app.post("/api/extract", async (req, res) => {
   }
 
   try {
-    const ytDlpPath = await getExecutablePath();
-    const cookiesPath = path.join(currentDirectory, "cookies.txt");
+    const cobaltResponse = await fetch("https://api.cobalt.tools/api/json", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: url.trim(),
+        vCodec: "h264"
+      })
+    });
 
-    const args = [
-      "-j",
-      "--no-playlist",
-      "--no-check-certificates",
-      "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-      "--extractor-args", "youtube:player_client=tv,creator",
-      url.trim()
-    ];
+    const data = await cobaltResponse.json();
 
-    if (fs.existsSync(cookiesPath)) {
-      args.push("--cookies", cookiesPath);
+    if (!cobaltResponse.ok || data.status === "error") {
+      return res.status(500).json({
+        error: "Extraction failed",
+        details: data.text || "Unable to parse link from platform"
+      });
     }
 
-    const { stdout } = await execFileAsync(ytDlpPath, args, { timeout: 30000 });
-    const output = JSON.parse(stdout);
-
     return res.json({
-      title: output.title || "downloaded_media",
-      downloadUrl: output.url,
-      thumbnail: output.thumbnail,
-      ext: output.ext || "mp4"
+      title: data.filename || "downloaded_media",
+      downloadUrl: data.url,
+      ext: "mp4"
     });
   } catch (error) {
-    const rawError = error.stderr || error.stdout || error.message || String(error);
-    console.error("yt-dlp extraction failed:", rawError);
-
-    // Clean error message for user UI
-    const cleanError = rawError.includes("Sign in to confirm")
-        ? "YouTube requested authentication. Please add cookies.txt to backend."
-        : "Media extraction failed. Verify link is public and accessible.";
-
+    console.error("Cobalt API extraction failed:", error);
     return res.status(500).json({
       error: "Extraction failed",
-      details: cleanError
+      details: "Network failure while reaching media engine."
     });
   }
 });
