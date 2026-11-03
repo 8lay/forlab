@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MongoClient, ObjectId } from "mongodb";
+import ytdl from "@distube/ytdl-core";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -162,7 +163,7 @@ app.post("/api/messages", async (req, res) => {
 });
 
 // ==========================================
-// MEDIA EXTRACTION ROUTE (INVIDIOUS ENGINE)
+// MEDIA EXTRACTION ROUTE (@distube/ytdl-core)
 // ==========================================
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body ?? {};
@@ -171,47 +172,33 @@ app.post("/api/extract", async (req, res) => {
     return res.status(400).json({ error: "Media URL is required" });
   }
 
-  // Extract video ID from YouTube URL formats
-  const match = url.trim().match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
-  const videoId = match ? match[1] : null;
-
-  if (!videoId) {
-    return res.status(400).json({ error: "Please enter a valid YouTube video or shorts URL." });
-  }
-
-  const instances = [
-    "https://invidious.nerdvpn.de",
-    "https://inv.riverside.rocks",
-    "https://invidious.drgns.space"
-  ];
-
-  for (const instance of instances) {
-    try {
-      const response = await fetch(`${instance}/api/v1/videos/${videoId}`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
-
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const combinedFormat = data.formatStreams?.find(f => f.container === "mp4" && f.qualityLabel) || data.formatStreams?.[0];
-
-      if (combinedFormat && combinedFormat.url) {
-        return res.json({
-          title: data.title || "downloaded_media",
-          downloadUrl: combinedFormat.url,
-          ext: "mp4"
-        });
-      }
-    } catch (err) {
-      console.warn(`Instance ${instance} failed:`, err.message);
+  try {
+    const isValid = ytdl.validateURL(url.trim());
+    if (!isValid) {
+      return res.status(400).json({ error: "Please enter a valid YouTube video or Shorts link." });
     }
-  }
 
-  return res.status(500).json({
-    error: "Extraction failed",
-    details: "Unable to retrieve download streams from available media mirrors."
-  });
+    const info = await ytdl.getInfo(url.trim());
+    const format = ytdl.chooseFormat(info.formats, { quality: "highestvideo", filter: "audioandvideo" })
+        || ytdl.chooseFormat(info.formats, { quality: "highest" });
+
+    if (!format || !format.url) {
+      return res.status(500).json({ error: "Unable to parse direct media stream." });
+    }
+
+    return res.json({
+      title: info.videoDetails.title || "downloaded_media",
+      downloadUrl: format.url,
+      thumbnail: info.videoDetails.thumbnails?.[0]?.url,
+      ext: "mp4"
+    });
+  } catch (error) {
+    console.error("ytdl-core extraction error:", error);
+    return res.status(500).json({
+      error: "Extraction failed",
+      details: error.message || "Failed to extract media details."
+    });
+  }
 });
 
 app.post("/api/admin/login", (req, res) => {
