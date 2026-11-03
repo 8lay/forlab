@@ -76,6 +76,18 @@
     .tag { color: var(--accent-2); font-size: .85rem; font-weight: 700; }
     .contact { text-align: center; padding-bottom: 120px; }
     .contact p { color: var(--muted); }
+    .contact-form { max-width: 620px; margin: 30px auto 0; text-align: left; }
+    .contact-form label { display: block; margin: 14px 0 6px; font-weight: 700; }
+    .contact-form input, .contact-form textarea {
+      width: 100%; padding: 13px 15px; color: var(--text);
+      background: rgba(11, 16, 32, .7); border: 1px solid var(--border);
+      border-radius: 12px; font: inherit;
+    }
+    .contact-form textarea { min-height: 150px; resize: vertical; }
+    .contact-form input:focus, .contact-form textarea:focus {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+    .form-status { min-height: 1.6em; margin: 14px 0 0; }
     footer { border-top: 1px solid var(--border); padding: 25px 0; color: var(--muted); }
 
     @media (max-width: 750px) {
@@ -96,7 +108,7 @@
         <a href="#work">Work</a>
         <a href="#contact">Contact</a>
       </div>
-      <a class="button secondary" href="mailto:you@example.com">Say hello</a>
+      <a class="button secondary" href="#contact">Say hello</a>
     </div>
   </nav>
 
@@ -150,10 +162,50 @@
       <div class="container">
         <h2 class="section-title">Let's connect.</h2>
         <p>Have an idea or just want to say hi?</p>
-        <a class="button" href="mailto:you@example.com">you@example.com</a>
+        <form class="contact-form" id="contact-form">
+          <label for="name">Name</label>
+          <input id="name" name="name" autocomplete="name" required>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required></textarea>
+          <button class="button" type="submit">Send message</button>
+          <p class="form-status" id="form-status" role="status"></p>
+        </form>
       </div>
     </section>
   </main>
+
+  <script>
+    const contactForm = document.querySelector("#contact-form");
+    const formStatus = document.querySelector("#form-status");
+
+    contactForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = contactForm.querySelector("button");
+      submitButton.disabled = true;
+      formStatus.textContent = "Sending...";
+
+      try {
+        const response = await fetch("https://forlab-me.vercel.app/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(Object.fromEntries(new FormData(contactForm)))
+        });
+
+        if (!response.ok) {
+          throw new Error("Request failed");
+        }
+
+        contactForm.reset();
+        formStatus.textContent = "Message sent successfully.";
+      } catch {
+        formStatus.textContent = "Unable to send the message. Please try again.";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
 
   <footer>
     <div class="container">© 2026  Name. Built with HTML and CSS.</div>
