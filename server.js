@@ -31,21 +31,30 @@ async function getExecutablePath() {
   }
 
   const tmpBinaryPath = "/tmp/yt-dlp";
-  const needsDownload = !fs.existsSync(tmpBinaryPath) || fs.statSync(tmpBinaryPath).size < 10000000;
+  const fileExists = fs.existsSync(tmpBinaryPath);
 
-  if (needsDownload) {
-    console.log("Fetching clean Linux yt-dlp binary to /tmp...");
-    const response = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", {
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
+  let isOld = false;
+  if (fileExists) {
+    const stats = fs.statSync(tmpBinaryPath);
+    const ageInHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
+    if (ageInHours > 12) isOld = true;
+  }
 
-    if (!response.ok) {
-      throw new Error(`Failed to download yt-dlp binary: ${response.statusText}`);
+  if (!fileExists || isOld) {
+    try {
+      console.log("Fetching fresh Linux yt-dlp binary to /tmp...");
+      const response = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", {
+        headers: { "User-Agent": "Mozilla/5.0" }
+      });
+
+      if (response.ok) {
+        const fileStream = fs.createWriteStream(tmpBinaryPath);
+        await pipeline(Readable.fromWeb(response.body), fileStream);
+        fs.chmodSync(tmpBinaryPath, 0o755);
+      }
+    } catch (err) {
+      console.error("Failed to auto-update yt-dlp binary:", err);
     }
-
-    const fileStream = fs.createWriteStream(tmpBinaryPath);
-    await pipeline(Readable.fromWeb(response.body), fileStream);
-    fs.chmodSync(tmpBinaryPath, 0o755);
   }
 
   return tmpBinaryPath;
@@ -214,8 +223,8 @@ app.post("/api/extract", async (req, res) => {
       "-j",
       "--no-playlist",
       "--no-check-certificates",
-      "--user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
-      "--extractor-args", "youtube:player_client=mweb,ios",
+      "--user-agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+      "--extractor-args", "youtube:player_client=android",
       url.trim()
     ];
 
