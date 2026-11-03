@@ -1,6 +1,6 @@
 import express from "express";
 import crypto from "node:crypto";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -23,7 +23,7 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") {
@@ -192,6 +192,38 @@ app.get("/api/admin/messages", requireAdmin, async (_req, res) => {
   } catch (error) {
     console.error("Failed to load contact messages", error);
     return res.status(500).json({ error: "Unable to load messages" });
+  }
+});
+
+app.delete("/api/admin/messages", requireAdmin, async (req, res) => {
+  if (!client) {
+    return res.status(500).json({ error: "Database is not configured" });
+  }
+
+  const { ids } = req.body ?? {};
+  if (
+    !Array.isArray(ids) ||
+    ids.length < 1 ||
+    ids.length > 100 ||
+    ids.some((id) => typeof id !== "string" || !ObjectId.isValid(id))
+  ) {
+    return res.status(400).json({ error: "Provide between 1 and 100 valid message IDs" });
+  }
+
+  try {
+    clientPromise ??= client.connect();
+    const connectedClient = await clientPromise;
+    const result = await connectedClient
+      .db("forlab")
+      .collection("messages")
+      .deleteMany({
+        _id: { $in: ids.map((id) => new ObjectId(id)) }
+      });
+
+    return res.json({ deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error("Failed to delete contact messages", error);
+    return res.status(500).json({ error: "Unable to delete messages" });
   }
 });
 
