@@ -187,7 +187,7 @@
       formStatus.textContent = "Sending...";
 
       try {
-        const response = await fetch("https://forlab-me.vercel.app/api/messages", {
+        const response = await fetch("https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net/api/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(Object.fromEntries(new FormData(contactForm)))
