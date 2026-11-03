@@ -233,7 +233,9 @@
         if (!response.ok || !data.downloadUrl) {
           item.querySelector(".item-title").textContent = "Extraction Failed";
           const statusSpan = item.querySelector(".item-status");
-          statusSpan.textContent = (data && data.error) ? data.error : "Unable to extract link";
+          statusSpan.textContent = (data && (data.details || data.error))
+                  ? (data.details || data.error)
+                  : "Unable to extract link";
           statusSpan.style.color = "var(--danger)";
         } else {
           item.querySelector(".item-title").textContent = data.title;

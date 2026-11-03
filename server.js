@@ -6,6 +6,8 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
@@ -23,23 +25,32 @@ const allowedOrigins = new Set([
 const execFileAsync = promisify(execFile);
 const isWindows = os.platform() === "win32";
 
-let ytDlpPath = isWindows
-    ? path.join(currentDirectory, "yt-dlp.exe")
-    : path.join(currentDirectory, "yt-dlp");
-
-// Azure Linux Fix: Copy binary to /tmp where execution permissions are allowed
-if (!isWindows) {
-  const tmpBinaryPath = "/tmp/yt-dlp";
-  try {
-    if (fs.existsSync(ytDlpPath)) {
-      fs.copyFileSync(ytDlpPath, tmpBinaryPath);
-      fs.chmodSync(tmpBinaryPath, 0o755);
-      ytDlpPath = tmpBinaryPath;
-      console.log("Successfully prepared Linux yt-dlp binary in /tmp");
-    }
-  } catch (err) {
-    console.error("Failed to set up yt-dlp binary in /tmp:", err);
+// Auto-download clean Linux binary on Azure if missing/corrupted
+async function getExecutablePath() {
+  if (isWindows) {
+    return path.join(currentDirectory, "yt-dlp.exe");
   }
+
+  const tmpBinaryPath = "/tmp/yt-dlp";
+  const needsDownload = !fs.existsSync(tmpBinaryPath) || fs.statSync(tmpBinaryPath).size < 10000000;
+
+  if (needsDownload) {
+    console.log("Fetching fresh Linux yt-dlp binary directly to /tmp...");
+    const response = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download yt-dlp binary: ${response.statusText}`);
+    }
+
+    const fileStream = fs.createWriteStream(tmpBinaryPath);
+    await pipeline(Readable.fromWeb(response.body), fileStream);
+    fs.chmodSync(tmpBinaryPath, 0o755);
+    console.log("Linux yt-dlp binary ready at /tmp/yt-dlp");
+  }
+
+  return tmpBinaryPath;
 }
 
 const client = process.env.MONGODB_URI
@@ -188,7 +199,7 @@ app.post("/api/messages", async (req, res) => {
 });
 
 // ==========================================
-// MEDIA EXTRACTION API ROUTE
+// MEDIA EXTRACTION ROUTE
 // ==========================================
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body ?? {};
@@ -198,6 +209,8 @@ app.post("/api/extract", async (req, res) => {
   }
 
   try {
+    const ytDlpPath = await getExecutablePath();
+
     const { stdout } = await execFileAsync(ytDlpPath, [
       "-j",
       "--no-playlist",
