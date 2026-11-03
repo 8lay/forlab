@@ -86,6 +86,17 @@
     .cancel-button { background: rgba(255, 255, 255, .1); }
     [hidden] { display: none !important; }
     body:not(.ready) main { visibility: hidden; }
+    @media (prefers-reduced-motion: no-preference) {
+      body { animation: page-in .7s cubic-bezier(.22, 1, .36, 1) both; }
+      .panel { animation: rise-in .7s .08s cubic-bezier(.22, 1, .36, 1) both; }
+      .message { animation: rise-in .55s cubic-bezier(.22, 1, .36, 1) both; }
+      .message:nth-child(2) { animation-delay: .06s; }
+      .message:nth-child(3) { animation-delay: .12s; }
+      .modal { animation: modal-in .35s cubic-bezier(.22, 1, .36, 1) both; }
+      @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes modal-in { from { opacity: 0; transform: scale(.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    }
   </style>
 </head>
 <body>
@@ -183,7 +194,7 @@
           <p class="message-body"></p>
         `;
         card.querySelector(".message-name").textContent = message.name;
-        card.querySelector(".message-email").textContent = message.email;
+        card.querySelector(".message-email").textContent = message.email || "No email provided";
         card.querySelector(".message-date").textContent = date;
         card.querySelector(".message-body").textContent = message.message;
         messagesElement.append(card);

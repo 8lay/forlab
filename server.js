@@ -105,27 +105,21 @@ app.post("/api/messages", async (req, res) => {
     return res.status(500).json({ error: "Database is not configured" });
   }
 
-  const { name, email, message } = req.body ?? {};
+  const { name, message } = req.body ?? {};
 
   if (
     typeof name !== "string" ||
-    typeof email !== "string" ||
     typeof message !== "string" ||
     !name.trim() ||
-    !email.trim() ||
     !message.trim()
   ) {
     return res.status(400).json({
-      error: "Name, email, and message are required"
+      error: "Name and message are required"
     });
   }
 
-  if (name.length > 100 || email.length > 254 || message.length > 5000) {
+  if (name.length > 100 || message.length > 5000) {
     return res.status(400).json({ error: "One or more fields are too long" });
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-    return res.status(400).json({ error: "Enter a valid email address" });
   }
 
   try {
@@ -134,7 +128,6 @@ app.post("/api/messages", async (req, res) => {
 
     await connectedClient.db("forlab").collection("messages").insertOne({
       name: name.trim(),
-      email: email.trim().toLowerCase(),
       message: message.trim(),
       createdAt: new Date()
     });
