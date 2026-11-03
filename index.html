@@ -104,9 +104,61 @@
     .contact-form input:focus, .contact-form textarea:focus {
       outline: 2px solid var(--accent); outline-offset: 2px;
     }
+    .contact-form input, .contact-form textarea {
+      transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    }
+    .contact-form input:focus, .contact-form textarea:focus {
+      box-shadow: 0 0 0 5px rgba(139, 124, 255, .12);
+      transform: translateY(-2px);
+    }
     .contact-form textarea { transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
-    .contact-form textarea:focus { box-shadow: 0 0 0 5px rgba(139, 124, 255, .12); transform: translateY(-2px); }
     .message-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .85rem; }
+    .contact-form .button { margin-top: 22px; }
+    .email-choice {
+      display: flex; align-items: center; gap: 10px; margin: 18px 0 0;
+      color: var(--muted); font-size: .92rem;
+    }
+    .email-choice input { width: auto; accent-color: var(--accent); }
+    .email-choice + .email-choice { margin-top: 6px; }
+    .optional-email { overflow: hidden; max-height: 0; opacity: 0; transform: translateY(-8px);
+      transition: max-height .35s ease, opacity .35s ease, transform .35s ease; }
+    .optional-email.is-visible { max-height: 100px; opacity: 1; transform: translateY(0); }
+    .loader {
+      position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+      background: var(--bg); transition: opacity .55s ease, visibility .55s ease;
+    }
+    .loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-grid { display: grid; grid-template-columns: repeat(5, 14px); gap: 7px; transform: rotate(-8deg); }
+    .loader-block { width: 14px; height: 14px; border-radius: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(139, 124, 255, .42); opacity: 0; transform: scale(.2);
+      animation: block-in .65s cubic-bezier(.22, 1, .36, 1) forwards; }
+    .loader-block:nth-child(1) { grid-column: 2; grid-row: 1; animation-delay: .05s; }
+    .loader-block:nth-child(2) { grid-column: 4; grid-row: 1; animation-delay: .12s; }
+    .loader-block:nth-child(3) { grid-column: 1; grid-row: 2; animation-delay: .19s; }
+    .loader-block:nth-child(4) { grid-column: 2; grid-row: 2; animation-delay: .26s; }
+    .loader-block:nth-child(5) { grid-column: 3; grid-row: 2; animation-delay: .33s; }
+    .loader-block:nth-child(6) { grid-column: 4; grid-row: 2; animation-delay: .4s; }
+    .loader-block:nth-child(7) { grid-column: 5; grid-row: 2; animation-delay: .47s; }
+    .loader-block:nth-child(8) { grid-column: 1; grid-row: 3; animation-delay: .54s; }
+    .loader-block:nth-child(9) { grid-column: 2; grid-row: 3; animation-delay: .61s; }
+    .loader-block:nth-child(10) { grid-column: 4; grid-row: 3; animation-delay: .68s; }
+    .loader-block:nth-child(11) { grid-column: 5; grid-row: 3; animation-delay: .75s; }
+    .loader-block:nth-child(12) { grid-column: 1; grid-row: 4; animation-delay: .82s; }
+    .loader-block:nth-child(13) { grid-column: 2; grid-row: 4; animation-delay: .89s; }
+    .loader-block:nth-child(14) { grid-column: 3; grid-row: 4; animation-delay: .96s; }
+    .loader-block:nth-child(15) { grid-column: 4; grid-row: 4; animation-delay: 1.03s; }
+    .loader-block:nth-child(16) { grid-column: 5; grid-row: 4; animation-delay: 1.1s; }
+    .loader-block:nth-child(17) { grid-column: 2; grid-row: 5; animation-delay: 1.17s; }
+    .loader-block:nth-child(18) { grid-column: 4; grid-row: 5; animation-delay: 1.24s; }
+    @keyframes block-in { 0% { opacity: 0; transform: scale(.2) translateY(10px); }
+      70% { opacity: 1; transform: scale(1.15) translateY(-2px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      .loader-block { opacity: 1; transform: none; animation: none; }
+      .loader { transition: none; }
+      .optional-email { transition: none; }
+    }
     .form-status { min-height: 1.6em; margin: 14px 0 0; }
     footer { border-top: 1px solid var(--border); padding: 25px 0; color: var(--muted); }
 
@@ -120,6 +172,16 @@
   </style>
 </head>
 <body>
+  <div class="loader" id="loader" role="status" aria-label="Loading Forlab">
+    <div class="loader-grid" aria-hidden="true">
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
+    </div>
+  </div>
   <nav class="nav">
     <div class="container nav-inner">
       <a class="logo" href="#">For<span>Lab</span>.</a>
@@ -185,6 +247,13 @@
         <form class="contact-form" id="contact-form">
           <label for="name">Name</label>
           <input id="name" name="name" autocomplete="name" required>
+          <div class="email-choice">Want a reply by email? <span>(optional)</span></div>
+          <label class="email-choice"><input name="email-choice" type="radio" value="no" checked> No, just leave my message</label>
+          <label class="email-choice"><input id="share-email" name="email-choice" type="radio" value="yes"> Yes, I want a reply</label>
+          <div class="optional-email" id="optional-email">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" disabled>
+          </div>
           <label for="message">Message</label>
           <textarea id="message" name="message" maxlength="5000" required></textarea>
           <div class="message-meta"><span>Say whatever is on your mind.</span><span id="message-count">0 / 5000</span></div>
@@ -198,9 +267,22 @@
   <script>
     const contactForm = document.querySelector("#contact-form");
     const formStatus = document.querySelector("#form-status");
+    const loader = document.querySelector("#loader");
+    const shareEmail = document.querySelector("#share-email");
+    const optionalEmail = document.querySelector("#optional-email");
+    const emailInput = document.querySelector("#email");
     const messageInput = document.querySelector("#message");
     const messageCount = document.querySelector("#message-count");
     const sendButton = contactForm.querySelector("button");
+
+    document.querySelectorAll('input[name="email-choice"]').forEach((choice) => {
+      choice.addEventListener("change", () => {
+        optionalEmail.classList.toggle("is-visible", shareEmail.checked);
+        emailInput.disabled = !shareEmail.checked;
+        emailInput.required = shareEmail.checked;
+        if (shareEmail.checked) emailInput.focus();
+      });
+    });
 
     messageInput.addEventListener("input", () => {
       messageCount.textContent = `${messageInput.value.length} / 5000`;
@@ -228,6 +310,9 @@
         }
 
         contactForm.reset();
+        optionalEmail.classList.remove("is-visible");
+        emailInput.disabled = true;
+        emailInput.required = false;
         messageCount.textContent = "0 / 5000";
         formStatus.textContent = "Sent. Thanks for reaching out.";
         formStatus.style.color = "var(--accent-2)";
@@ -237,6 +322,10 @@
       } finally {
         sendButton.disabled = false;
       }
+    });
+
+    window.addEventListener("load", () => {
+      window.setTimeout(() => loader.classList.add("is-hidden"), 500);
     });
   </script>
 

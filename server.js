@@ -105,7 +105,7 @@ app.post("/api/messages", async (req, res) => {
     return res.status(500).json({ error: "Database is not configured" });
   }
 
-  const { name, message } = req.body ?? {};
+  const { name, email, message } = req.body ?? {};
 
   if (
     typeof name !== "string" ||
@@ -118,19 +118,34 @@ app.post("/api/messages", async (req, res) => {
     });
   }
 
-  if (name.length > 100 || message.length > 5000) {
+  if (
+    (email !== undefined && typeof email !== "string") ||
+    (typeof email === "string" && email.length > 254) ||
+    name.length > 100 ||
+    message.length > 5000
+  ) {
     return res.status(400).json({ error: "One or more fields are too long" });
+  }
+
+  if (typeof email === "string" && email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: "Enter a valid email address" });
   }
 
   try {
     clientPromise ??= client.connect();
     const connectedClient = await clientPromise;
-
-    await connectedClient.db("forlab").collection("messages").insertOne({
+    const messageDocument = {
       name: name.trim(),
       message: message.trim(),
       createdAt: new Date()
-    });
+    };
+
+    if (typeof email === "string" && email.trim()) {
+      messageDocument.email = email.trim().toLowerCase();
+    }
+
+    await connectedClient.db("forlab").collection("messages").insertOne(messageDocument);
 
     return res.status(201).json({ success: true });
   } catch (error) {

@@ -64,11 +64,12 @@
     .select-all { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: .9rem; }
     .select-all input, .message-select { width: auto; accent-color: var(--accent); }
     .messages { display: grid; gap: 16px; }
-    .message { padding: 22px; }
+    .message { padding: 24px; margin: 0; }
     .message-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
     .message-heading { display: flex; gap: 12px; align-items: flex-start; }
     .message-name { font-size: 1.15rem; font-weight: 700; }
     .message-email, .message-date { color: var(--muted); font-size: .9rem; }
+    .message-email:empty { display: none; }
     .message-body { margin: 18px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
     .empty { color: var(--muted); padding: 32px 0; }
     .modal-backdrop {
@@ -92,10 +93,13 @@
       .message { animation: rise-in .55s cubic-bezier(.22, 1, .36, 1) both; }
       .message:nth-child(2) { animation-delay: .06s; }
       .message:nth-child(3) { animation-delay: .12s; }
+      .message.is-new { animation: cinematic-in .8s cubic-bezier(.22, 1, .36, 1) both; }
       .modal { animation: modal-in .35s cubic-bezier(.22, 1, .36, 1) both; }
       @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
       @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes modal-in { from { opacity: 0; transform: scale(.94) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+      @keyframes cinematic-in { from { opacity: 0; transform: translateY(-28px) scale(.96); filter: blur(8px); }
+        to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
     }
   </style>
 </head>
@@ -156,6 +160,8 @@
     const cancelDelete = document.querySelector("#cancel-delete");
     const confirmDelete = document.querySelector("#confirm-delete");
     const tokenKey = "forlab_admin_token";
+    let knownMessageIds = new Set();
+    let polling = false;
 
     function showLogin() {
       loginView.hidden = false;
@@ -167,7 +173,8 @@
       inboxView.hidden = false;
     }
 
-    function renderMessages(messages) {
+    function renderMessages(messages, animateNew = false) {
+      const selectedBeforeRender = new Set(selectedIds());
       countElement.textContent = `${messages.length} message${messages.length === 1 ? "" : "s"}`;
       messagesElement.replaceChildren();
 
@@ -178,7 +185,7 @@
 
       for (const message of messages) {
         const card = document.createElement("article");
-        card.className = "message";
+        card.className = `message${animateNew && !knownMessageIds.has(String(message._id)) ? " is-new" : ""}`;
         const date = new Date(message.createdAt).toLocaleString();
         card.innerHTML = `
           <div class="message-head">
@@ -194,11 +201,13 @@
           <p class="message-body"></p>
         `;
         card.querySelector(".message-name").textContent = message.name;
-        card.querySelector(".message-email").textContent = message.email || "No email provided";
+        card.querySelector(".message-email").textContent = message.email || "";
         card.querySelector(".message-date").textContent = date;
         card.querySelector(".message-body").textContent = message.message;
+        card.querySelector(".message-select").checked = selectedBeforeRender.has(String(message._id));
         messagesElement.append(card);
       }
+      knownMessageIds = new Set(messages.map((message) => String(message._id)));
       updateSelectionState();
     }
 
@@ -271,8 +280,24 @@
         throw new Error("Unable to load messages.");
       }
 
-      renderMessages(await response.json());
+      const messages = await response.json();
+      renderMessages(messages, knownMessageIds.size > 0);
       showInbox();
+    }
+
+    async function pollMessages() {
+      const token = sessionStorage.getItem(tokenKey);
+      if (!token || polling) return;
+      polling = true;
+      try {
+        await loadMessages(token);
+      } catch (error) {
+        if (error.message.includes("session expired")) {
+          loginStatus.textContent = error.message;
+        }
+      } finally {
+        polling = false;
+      }
     }
 
     loginForm.addEventListener("submit", async (event) => {
@@ -341,6 +366,7 @@
       showLogin();
       document.body.classList.add("ready");
     }
+    window.setInterval(pollMessages, 8000);
   </script>
 </body>
 </html>
