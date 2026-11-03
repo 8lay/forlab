@@ -162,7 +162,7 @@ app.post("/api/messages", async (req, res) => {
 });
 
 // ==========================================
-// MEDIA EXTRACTION ROUTE VIA COBALT API
+// MEDIA EXTRACTION ROUTE (INVIDIOUS ENGINE)
 // ==========================================
 app.post("/api/extract", async (req, res) => {
   const { url } = req.body ?? {};
@@ -171,40 +171,47 @@ app.post("/api/extract", async (req, res) => {
     return res.status(400).json({ error: "Media URL is required" });
   }
 
-  try {
-    const cobaltResponse = await fetch("https://api.cobalt.tools/api/json", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        url: url.trim(),
-        vCodec: "h264"
-      })
-    });
+  // Extract video ID from YouTube URL formats
+  const match = url.trim().match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+  const videoId = match ? match[1] : null;
 
-    const data = await cobaltResponse.json();
-
-    if (!cobaltResponse.ok || data.status === "error") {
-      return res.status(500).json({
-        error: "Extraction failed",
-        details: data.text || "Unable to parse link from platform"
-      });
-    }
-
-    return res.json({
-      title: data.filename || "downloaded_media",
-      downloadUrl: data.url,
-      ext: "mp4"
-    });
-  } catch (error) {
-    console.error("Cobalt API extraction failed:", error);
-    return res.status(500).json({
-      error: "Extraction failed",
-      details: "Network failure while reaching media engine."
-    });
+  if (!videoId) {
+    return res.status(400).json({ error: "Please enter a valid YouTube video or shorts URL." });
   }
+
+  const instances = [
+    "https://invidious.nerdvpn.de",
+    "https://inv.riverside.rocks",
+    "https://invidious.drgns.space"
+  ];
+
+  for (const instance of instances) {
+    try {
+      const response = await fetch(`${instance}/api/v1/videos/${videoId}`, {
+        headers: { "User-Agent": "Mozilla/5.0" }
+      });
+
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const combinedFormat = data.formatStreams?.find(f => f.container === "mp4" && f.qualityLabel) || data.formatStreams?.[0];
+
+      if (combinedFormat && combinedFormat.url) {
+        return res.json({
+          title: data.title || "downloaded_media",
+          downloadUrl: combinedFormat.url,
+          ext: "mp4"
+        });
+      }
+    } catch (err) {
+      console.warn(`Instance ${instance} failed:`, err.message);
+    }
+  }
+
+  return res.status(500).json({
+    error: "Extraction failed",
+    details: "Unable to retrieve download streams from available media mirrors."
+  });
 });
 
 app.post("/api/admin/login", (req, res) => {
