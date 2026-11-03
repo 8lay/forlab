@@ -9,7 +9,10 @@ const port = process.env.PORT || 3000;
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const allowedOrigins = new Set([
   "https://forlab.me",
-  "https://www.forlab.me"
+  "https://www.forlab.me",
+  "https://socialdownload.forlab.me",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
 ]);
 
 const client = process.env.MONGODB_URI
