@@ -6,3 +6,6 @@ yt-dlp.exe
 !.env.example
 npm-debug.log*
 .DS_Store
+
+cookies.txt
+yt-dlp

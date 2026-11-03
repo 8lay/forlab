@@ -3,7 +3,6 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MongoClient, ObjectId } from "mongodb";
-import ytdl from "@distube/ytdl-core";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -162,43 +161,36 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// ==========================================
-// MEDIA EXTRACTION ROUTE (@distube/ytdl-core)
-// ==========================================
-app.post("/api/extract", async (req, res) => {
+app.post("/api/extract", (req, res) => {
   const { url } = req.body ?? {};
 
   if (!url || typeof url !== "string" || !url.trim()) {
     return res.status(400).json({ error: "Media URL is required" });
   }
 
+  let mediaUrl;
   try {
-    const isValid = ytdl.validateURL(url.trim());
-    if (!isValid) {
-      return res.status(400).json({ error: "Please enter a valid YouTube video or Shorts link." });
-    }
+    mediaUrl = new URL(url.trim());
+  } catch {
+    return res.status(400).json({ error: "Enter a valid media URL." });
+  }
 
-    const info = await ytdl.getInfo(url.trim());
-    const format = ytdl.chooseFormat(info.formats, { quality: "highestvideo", filter: "audioandvideo" })
-        || ytdl.chooseFormat(info.formats, { quality: "highest" });
+  if (!["http:", "https:"].includes(mediaUrl.protocol)) {
+    return res.status(400).json({ error: "Only HTTP and HTTPS URLs are supported." });
+  }
 
-    if (!format || !format.url) {
-      return res.status(500).json({ error: "Unable to parse direct media stream." });
-    }
-
-    return res.json({
-      title: info.videoDetails.title || "downloaded_media",
-      downloadUrl: format.url,
-      thumbnail: info.videoDetails.thumbnails?.[0]?.url,
-      ext: "mp4"
-    });
-  } catch (error) {
-    console.error("ytdl-core extraction error:", error);
-    return res.status(500).json({
-      error: "Extraction failed",
-      details: error.message || "Failed to extract media details."
+  const extension = mediaUrl.pathname.match(/\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i)?.[1];
+  if (!extension) {
+    return res.status(422).json({
+      error: "This tool supports direct public media URLs only. YouTube and social post URLs must be downloaded through the platform's own tools."
     });
   }
+
+  return res.json({
+    title: "downloaded_media",
+    downloadUrl: mediaUrl.href,
+    ext: extension.toLowerCase()
+  });
 });
 
 app.post("/api/admin/login", (req, res) => {
