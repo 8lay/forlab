@@ -26,7 +26,7 @@ const ytDlpPath = isWindows
     ? path.join(currentDirectory, "yt-dlp.exe")
     : path.join(currentDirectory, "yt-dlp");
 
-// Grant execution permissions (+x / 755) on Linux automatically
+// Ensure executable permissions on Linux
 if (!isWindows && fs.existsSync(ytDlpPath)) {
   try {
     fs.chmodSync(ytDlpPath, 0o755);
@@ -195,8 +195,10 @@ app.post("/api/extract", async (req, res) => {
       "-j",
       "--no-playlist",
       "--no-check-certificates",
+      "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "--extractor-args", "youtube:player_client=android,web",
       url.trim()
-    ]);
+    ], { timeout: 30000 });
 
     const output = JSON.parse(stdout);
 
@@ -207,8 +209,11 @@ app.post("/api/extract", async (req, res) => {
       ext: output.ext || "mp4"
     });
   } catch (error) {
-    console.error("yt-dlp extraction failed:", error);
-    return res.status(500).json({ error: "Failed to extract media. Make sure the link is public." });
+    console.error("yt-dlp extraction failed:", error.stderr || error.message || error);
+    return res.status(500).json({
+      error: "Failed to extract media. Make sure the link is public.",
+      details: error.stderr ? error.stderr.slice(0, 300) : error.message
+    });
   }
 });
 

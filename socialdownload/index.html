@@ -49,34 +49,41 @@
     .button:disabled { opacity: .6; cursor: wait; }
     .status { min-height: 24px; color: var(--muted); }
 
-    /* Fancy Block Progress Bar Styling */
-    .progress-box {
-      display: none; margin-top: 20px; padding: 18px; border: 1px solid var(--line);
-      border-radius: 18px; background: rgba(0, 0, 0, 0.4); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    /* Modern Cyber Matrix Progress HUD */
+    .cyber-hud {
+      display: none; margin-top: 22px; padding: 20px; border: 1px solid rgba(69,222,199,.25);
+      border-radius: 20px; background: rgba(8, 11, 23, 0.75);
+      box-shadow: 0 0 35px rgba(69,222,199,.08), inset 0 0 20px rgba(0,0,0,.6);
+      position: relative; overflow: hidden;
     }
-    .progress-header {
+    .cyber-hud::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      animation: scanline 2s infinite linear;
+    }
+    .hud-header {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 10px; font-size: .88rem; font-weight: 700; color: var(--cyan);
-      font-family: monospace; letter-spacing: 0.05em;
+      margin-bottom: 12px; font-family: monospace; font-size: .85rem; font-weight: 700;
+      color: var(--cyan); letter-spacing: 0.12em; text-transform: uppercase;
     }
-    .progress-track {
-      height: 18px; border-radius: 6px; background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--line); padding: 2px; overflow: hidden; position: relative;
+    .hud-pct { color: var(--purple); font-size: 1.05rem; text-shadow: 0 0 10px rgba(141,124,255,.5); }
+    .cyber-blocks-grid {
+      display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px;
+      padding: 6px; background: rgba(0,0,0,.4); border-radius: 10px; border: 1px solid var(--line);
     }
-    .progress-fill-blocks {
-      height: 100%; width: 0%; border-radius: 4px;
-      background: repeating-linear-gradient(
-              90deg,
-              var(--cyan) 0px,
-              var(--cyan) 12px,
-              transparent 12px,
-              transparent 16px
-      );
-      box-shadow: 0 0 15px var(--cyan);
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .c-block {
+      height: 16px; border-radius: 3px; background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08); transition: background .25s ease, box-shadow .25s ease, border-color .25s ease;
     }
-    .block-counter { font-family: monospace; color: var(--purple); letter-spacing: 2px; font-weight: bold; }
-    .progress-ascii { margin-top: 8px; font-family: monospace; font-size: 0.85rem; color: var(--muted); letter-spacing: 1px; }
+    .c-block.active {
+      background: var(--cyan); border-color: #79fbe7;
+      box-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(69,222,199,.4);
+    }
+    .c-block.lead {
+      background: #ffffff; border-color: #ffffff;
+      box-shadow: 0 0 15px #ffffff, 0 0 25px var(--cyan);
+      animation: block-pulse 0.6s infinite alternate;
+    }
 
     .queue { display: grid; gap: 12px; margin-top: 22px; }
     .item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.035); animation: item-in .55s cubic-bezier(.22,1,.36,1) both; }
@@ -86,6 +93,8 @@
     .item a { flex: 0 0 auto; color: var(--cyan); font-weight: 700; text-decoration: none; padding: 6px 14px; border: 1px solid var(--cyan); border-radius: 999px; }
     .item a:hover { background: rgba(69,222,199,.15); }
     .notice { margin-top: 22px; padding: 15px 17px; border-left: 3px solid var(--cyan); color: var(--muted); background: rgba(69,222,199,.06); }
+    @keyframes scanline { 0% { left: -100%; } 100% { left: 100%; } }
+    @keyframes block-pulse { from { opacity: 0.7; } to { opacity: 1; scale: 1.05; } }
     @keyframes item-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @media (max-width: 720px) { .platforms { grid-template-columns: repeat(2, 1fr); } .item { align-items: flex-start; flex-direction: column; } .item a { width: 100%; text-align: center; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -120,16 +129,13 @@
       </div>
     </form>
 
-    <!-- Block Progress Bar Container -->
-    <div class="progress-box" id="progress-box">
-      <div class="progress-header">
-        <span>SYSTEM_EXTRACTION_RUNNING...</span>
-        <span class="block-counter" id="progress-percent">0%</span>
+    <!-- Single Cyber Block Matrix HUD -->
+    <div class="cyber-hud" id="cyber-hud">
+      <div class="hud-header">
+        <span id="hud-status">⚡ SYSTEM_EXTRACTING_MEDIA_STREAM...</span>
+        <span class="hud-pct" id="hud-pct">0%</span>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill-blocks" id="progress-fill"></div>
-      </div>
-      <div class="progress-ascii" id="progress-ascii">[░░░░░░░░░░░░░░░░░░░░]</div>
+      <div class="cyber-blocks-grid" id="blocks-grid"></div>
     </div>
 
     <div class="notice">No accounts, passwords, or private links are collected. This tool does not bypass platform protections.</div>
@@ -141,11 +147,18 @@
   const queue = document.querySelector("#queue");
   const status = document.querySelector("#status");
   const prepareButton = document.querySelector("#prepare-button");
-  const progressBox = document.querySelector("#progress-box");
-  const progressFill = document.querySelector("#progress-fill");
-  const progressPercent = document.querySelector("#progress-percent");
-  const progressAscii = document.querySelector("#progress-ascii");
+  const cyberHud = document.querySelector("#cyber-hud");
+  const hudPct = document.querySelector("#hud-pct");
+  const blocksGrid = document.querySelector("#blocks-grid");
+  const TOTAL_BLOCKS = 24;
   let platform = "Any";
+
+  // Build grid blocks
+  for (let i = 0; i < TOTAL_BLOCKS; i++) {
+    const block = document.createElement("div");
+    block.className = "c-block";
+    blocksGrid.appendChild(block);
+  }
 
   document.querySelectorAll(".platform").forEach((button) => {
     button.addEventListener("click", () => {
@@ -156,15 +169,22 @@
     });
   });
 
-  function updateProgressBar(percentage) {
+  function setCyberProgress(percentage) {
     const pct = Math.min(100, Math.max(0, Math.round(percentage)));
-    progressFill.style.width = `${pct}%`;
-    progressPercent.textContent = `${pct}%`;
+    hudPct.textContent = `${pct}%`;
 
-    const totalBlocks = 20;
-    const filledBlocks = Math.round((pct / 100) * totalBlocks);
-    const emptyBlocks = totalBlocks - filledBlocks;
-    progressAscii.textContent = `[${'█'.repeat(filledBlocks)}${'░'.repeat(emptyBlocks)}]`;
+    const filledCount = Math.round((pct / 100) * TOTAL_BLOCKS);
+    const blocks = blocksGrid.children;
+
+    for (let i = 0; i < TOTAL_BLOCKS; i++) {
+      blocks[i].className = "c-block";
+      if (i < filledCount) {
+        blocks[i].classList.add("active");
+        if (i === filledCount - 1 && pct < 100) {
+          blocks[i].classList.add("lead");
+        }
+      }
+    }
   }
 
   prepareButton.addEventListener("click", async () => {
@@ -178,8 +198,8 @@
 
     queue.replaceChildren();
     prepareButton.disabled = true;
-    progressBox.style.display = "block";
-    updateProgressBar(0);
+    cyberHud.style.display = "block";
+    setCyberProgress(5);
     status.style.color = "var(--muted)";
     status.textContent = `Extracting ${urls.length} link${urls.length === 1 ? "" : "s"}...`;
 
@@ -237,7 +257,7 @@
         statusSpan.style.color = "var(--danger)";
       }
 
-      updateProgressBar(((i + 1) / urls.length) * 100);
+      setCyberProgress(((i + 1) / urls.length) * 100);
     }
 
     status.textContent = `${readyCount} of ${urls.length} media item${urls.length === 1 ? "" : "s"} ready.`;
