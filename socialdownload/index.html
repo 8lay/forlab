@@ -94,7 +94,7 @@
     .item a:hover { background: rgba(69,222,199,.15); }
     .notice { margin-top: 22px; padding: 15px 17px; border-left: 3px solid var(--cyan); color: var(--muted); background: rgba(69,222,199,.06); }
     @keyframes scanline { 0% { left: -100%; } 100% { left: 100%; } }
-    @keyframes block-pulse { from { opacity: 0.7; } to { opacity: 1; scale: 1.05; } }
+    @keyframes block-pulse { from { opacity: 0.7; } to { opacity: 1; transform: scale(1.05); } }
     @keyframes item-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @media (max-width: 720px) { .platforms { grid-template-columns: repeat(2, 1fr); } .item { align-items: flex-start; flex-direction: column; } .item a { width: 100%; text-align: center; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -129,7 +129,7 @@
       </div>
     </form>
 
-    <!-- Single Cyber Block Matrix HUD -->
+    <!-- Cyber Block Matrix HUD -->
     <div class="cyber-hud" id="cyber-hud">
       <div class="hud-header">
         <span id="hud-status">Preparing your media download...</span>
@@ -142,6 +142,7 @@
     <div class="queue" id="queue"></div>
   </section>
 </main>
+
 <script>
   const urlsInput = document.querySelector("#urls");
   const queue = document.querySelector("#queue");
@@ -212,12 +213,12 @@
       item.className = "item";
       item.style.animationDelay = `${i * 70}ms`;
       item.innerHTML = `
-          <div class="item-info">
-            <div class="item-title">Extracting media info...</div>
-            <div class="item-url"></div>
-          </div>
-          <span class="item-status" style="color: var(--muted); font-size: 0.9rem;">Processing...</span>
-        `;
+        <div class="item-info">
+          <div class="item-title">Extracting media info...</div>
+          <div class="item-url"></div>
+        </div>
+        <span class="item-status" style="color: var(--muted); font-size: 0.9rem;">Processing...</span>
+      `;
       item.querySelector(".item-url").textContent = url;
       queue.append(item);
 
@@ -253,14 +254,10 @@
         }
 
       } catch (err) {
-        if (!response.ok || !data.downloadUrl) {
-          item.querySelector(".item-title").textContent = "Extraction Failed";
-          const statusSpan = item.querySelector(".item-status");
-          statusSpan.textContent = (data && (data.details || data.error))
-                  ? (data.details || data.error)
-                  : "Unable to extract link";
-          statusSpan.style.color = "var(--danger)";
-        }
+        item.querySelector(".item-title").textContent = "Extraction Failed";
+        const statusSpan = item.querySelector(".item-status");
+        statusSpan.textContent = "Network error or API unreachable";
+        statusSpan.style.color = "var(--danger)";
       }
 
       setCyberProgress(((i + 1) / urls.length) * 100);

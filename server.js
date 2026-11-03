@@ -25,7 +25,6 @@ const allowedOrigins = new Set([
 const execFileAsync = promisify(execFile);
 const isWindows = os.platform() === "win32";
 
-// Auto-download clean Linux binary on Azure if missing/corrupted
 async function getExecutablePath() {
   if (isWindows) {
     return path.join(currentDirectory, "yt-dlp.exe");
@@ -35,7 +34,7 @@ async function getExecutablePath() {
   const needsDownload = !fs.existsSync(tmpBinaryPath) || fs.statSync(tmpBinaryPath).size < 10000000;
 
   if (needsDownload) {
-    console.log("Fetching fresh Linux yt-dlp binary directly to /tmp...");
+    console.log("Fetching clean Linux yt-dlp binary to /tmp...");
     const response = await fetch("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", {
       headers: { "User-Agent": "Mozilla/5.0" }
     });
@@ -47,7 +46,6 @@ async function getExecutablePath() {
     const fileStream = fs.createWriteStream(tmpBinaryPath);
     await pipeline(Readable.fromWeb(response.body), fileStream);
     fs.chmodSync(tmpBinaryPath, 0o755);
-    console.log("Linux yt-dlp binary ready at /tmp/yt-dlp");
   }
 
   return tmpBinaryPath;
@@ -210,16 +208,22 @@ app.post("/api/extract", async (req, res) => {
 
   try {
     const ytDlpPath = await getExecutablePath();
+    const cookiesPath = path.join(currentDirectory, "cookies.txt");
 
-    const { stdout } = await execFileAsync(ytDlpPath, [
+    const args = [
       "-j",
       "--no-playlist",
       "--no-check-certificates",
-      "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "--extractor-args", "youtube:player_client=android,web",
+      "--user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
+      "--extractor-args", "youtube:player_client=mweb,ios",
       url.trim()
-    ], { timeout: 30000 });
+    ];
 
+    if (fs.existsSync(cookiesPath)) {
+      args.push("--cookies", cookiesPath);
+    }
+
+    const { stdout } = await execFileAsync(ytDlpPath, args, { timeout: 30000 });
     const output = JSON.parse(stdout);
 
     return res.json({
