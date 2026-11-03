@@ -251,10 +251,14 @@
         }
 
       } catch (err) {
-        item.querySelector(".item-title").textContent = "Extraction Failed";
-        const statusSpan = item.querySelector(".item-status");
-        statusSpan.textContent = "Network error or API unreachable";
-        statusSpan.style.color = "var(--danger)";
+        if (!response.ok || !data.downloadUrl) {
+          item.querySelector(".item-title").textContent = "Extraction Failed";
+          const statusSpan = item.querySelector(".item-status");
+          statusSpan.textContent = (data && (data.details || data.error))
+                  ? (data.details || data.error)
+                  : "Unable to extract link";
+          statusSpan.style.color = "var(--danger)";
+        }
       }
 
       setCyberProgress(((i + 1) / urls.length) * 100);

@@ -22,16 +22,23 @@ const allowedOrigins = new Set([
 
 const execFileAsync = promisify(execFile);
 const isWindows = os.platform() === "win32";
-const ytDlpPath = isWindows
+
+let ytDlpPath = isWindows
     ? path.join(currentDirectory, "yt-dlp.exe")
     : path.join(currentDirectory, "yt-dlp");
 
-// Ensure executable permissions on Linux
-if (!isWindows && fs.existsSync(ytDlpPath)) {
+// Azure Linux Fix: Copy binary to /tmp where execution permissions are allowed
+if (!isWindows) {
+  const tmpBinaryPath = "/tmp/yt-dlp";
   try {
-    fs.chmodSync(ytDlpPath, 0o755);
+    if (fs.existsSync(ytDlpPath)) {
+      fs.copyFileSync(ytDlpPath, tmpBinaryPath);
+      fs.chmodSync(tmpBinaryPath, 0o755);
+      ytDlpPath = tmpBinaryPath;
+      console.log("Successfully prepared Linux yt-dlp binary in /tmp");
+    }
   } catch (err) {
-    console.error("Failed to set executable permissions on yt-dlp binary:", err);
+    console.error("Failed to set up yt-dlp binary in /tmp:", err);
   }
 }
 
@@ -209,10 +216,11 @@ app.post("/api/extract", async (req, res) => {
       ext: output.ext || "mp4"
     });
   } catch (error) {
-    console.error("yt-dlp extraction failed:", error.stderr || error.message || error);
+    const errDetail = error.stderr || error.stdout || error.message || String(error);
+    console.error("yt-dlp extraction failed:", errDetail);
     return res.status(500).json({
-      error: "Failed to extract media. Make sure the link is public.",
-      details: error.stderr ? error.stderr.slice(0, 300) : error.message
+      error: "Extraction failed",
+      details: errDetail.slice(0, 300)
     });
   }
 });
