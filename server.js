@@ -1,9 +1,12 @@
 import express from "express";
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { MongoClient, ObjectId } from "mongodb";
 
 const app = express();
 const port = process.env.PORT || 3000;
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const allowedOrigins = new Set([
   "https://forlab.me",
   "https://www.forlab.me"
@@ -234,6 +237,8 @@ app.delete("/api/admin/messages", requireAdmin, async (req, res) => {
     return res.status(500).json({ error: "Unable to delete messages" });
   }
 });
+
+app.use(express.static(path.join(currentDirectory, "socialdownload")));
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });

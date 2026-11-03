@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download public direct media you are authorized to save.">
+  <link rel="icon" type="image/png" href="https://forlab.me/favicon.png">
+  <title>Social Download | Forlab</title>
+  <style>
+    :root {
+      --bg: #080b17; --panel: rgba(18, 25, 48, .78); --text: #f7f8ff;
+      --muted: #9da8c7; --line: rgba(255,255,255,.12); --purple: #8d7cff;
+      --cyan: #45dec7; --danger: #ff9aab; --shadow: 0 30px 100px rgba(0,0,0,.32);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      font: 16px/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
+      background: radial-gradient(circle at 12% 0%, rgba(141,124,255,.28), transparent 34rem),
+        radial-gradient(circle at 90% 90%, rgba(69,222,199,.14), transparent 32rem), var(--bg);
+    }
+    .shell { width: min(1050px, calc(100% - 34px)); margin: auto; padding: 38px 0 70px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .brand { color: var(--cyan); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .back { color: var(--muted); text-decoration: none; }
+    .hero { padding: 90px 0 44px; max-width: 760px; }
+    .eyebrow { color: var(--cyan); font-size: .82rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 12px 0 18px; font-size: clamp(3rem, 8vw, 6.5rem); line-height: .9; letter-spacing: -.08em; }
+    h1 span { color: var(--purple); }
+    .hero p { color: var(--muted); font-size: 1.1rem; max-width: 660px; }
+    .panel { padding: 26px; border: 1px solid var(--line); border-radius: 28px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
+    .platforms { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .platform {
+      min-height: 105px; padding: 14px; border: 1px solid var(--line); border-radius: 18px;
+      color: var(--muted); background: rgba(255,255,255,.035); cursor: pointer;
+      font: inherit; text-align: left; transition: transform .3s cubic-bezier(.22,1,.36,1), border-color .3s ease, background .3s ease;
+    }
+    .platform:hover, .platform.active { transform: translateY(-5px); color: var(--text); border-color: var(--cyan); background: linear-gradient(145deg, rgba(141,124,255,.24), rgba(69,222,199,.12)); }
+    .platform-icon { display: block; margin-bottom: 12px; font-size: 1.7rem; }
+    .platform small { display: block; color: var(--muted); margin-top: 3px; }
+    label { display: block; margin: 24px 0 8px; color: var(--muted); font-size: .92rem; font-weight: 700; }
+    textarea, input { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: 16px; color: var(--text); background: rgba(0,0,0,.22); font: inherit; }
+    textarea { min-height: 150px; resize: vertical; }
+    textarea:focus, input:focus { outline: 2px solid var(--purple); border-color: transparent; box-shadow: 0 0 0 6px rgba(141,124,255,.12); }
+    .hint { margin: 8px 0 0; color: var(--muted); font-size: .88rem; }
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 20px; }
+    .button { border: 0; border-radius: 999px; padding: 13px 20px; color: white; background: linear-gradient(135deg, var(--purple), #6758e9); font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 12px 30px rgba(141,124,255,.25); }
+    .button:disabled { opacity: .6; cursor: wait; }
+    .status { min-height: 24px; color: var(--muted); }
+    .queue { display: grid; gap: 12px; margin-top: 22px; }
+    .item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.035); animation: item-in .55s cubic-bezier(.22,1,.36,1) both; }
+    .item-url { min-width: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+    .item a { flex: 0 0 auto; color: var(--cyan); font-weight: 700; text-decoration: none; }
+    .notice { margin-top: 22px; padding: 15px 17px; border-left: 3px solid var(--cyan); color: var(--muted); background: rgba(69,222,199,.06); }
+    @keyframes item-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @media (max-width: 720px) { .platforms { grid-template-columns: repeat(2, 1fr); } .item { align-items: flex-start; flex-direction: column; } .item a { width: 100%; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="https://forlab.me">Forlab / tools</a>
+      <a class="back" href="https://forlab.me">← Back to Forlab</a>
+    </header>
+    <section class="hero">
+      <div class="eyebrow">Save what is yours</div>
+      <h1>Drop a link.<br><span>Keep the moment.</span></h1>
+      <p>Choose a platform, paste public direct media links, and prepare a clean download queue. Use this only for content you own or have permission to save.</p>
+    </section>
+    <section class="panel">
+      <div class="platforms" id="platforms">
+        <button class="platform active" data-platform="Any" type="button"><span class="platform-icon">✦</span>Any<small>Direct media</small></button>
+        <button class="platform" data-platform="Instagram" type="button"><span class="platform-icon">◉</span>Instagram<small>Authorized content</small></button>
+        <button class="platform" data-platform="TikTok" type="button"><span class="platform-icon">♪</span>TikTok<small>Authorized content</small></button>
+        <button class="platform" data-platform="YouTube" type="button"><span class="platform-icon">▶</span>YouTube<small>Authorized content</small></button>
+        <button class="platform" data-platform="Facebook" type="button"><span class="platform-icon">f</span>Facebook<small>Authorized content</small></button>
+      </div>
+      <form id="download-form">
+        <label for="urls">Media URLs</label>
+        <textarea id="urls" placeholder="Paste one direct .jpg, .png, .webp, .mp4, or .webm URL per line"></textarea>
+        <p class="hint">Social profile/post URLs may require the platform’s own download or export tools.</p>
+        <div class="actions">
+          <button class="button" id="prepare-button" type="submit">Prepare downloads ↗</button>
+          <span class="status" id="status" role="status"></span>
+        </div>
+      </form>
+      <div class="notice">No accounts, passwords, or private links are collected. This tool does not bypass platform protections.</div>
+      <div class="queue" id="queue"></div>
+    </section>
+  </main>
+  <script>
+    const form = document.querySelector("#download-form");
+    const urlsInput = document.querySelector("#urls");
+    const queue = document.querySelector("#queue");
+    const status = document.querySelector("#status");
+    const prepareButton = document.querySelector("#prepare-button");
+    let platform = "Any";
+
+    document.querySelectorAll(".platform").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelector(".platform.active").classList.remove("active");
+        button.classList.add("active");
+        platform = button.dataset.platform;
+      });
+    });
+
+    function directMediaUrl(value) {
+      try {
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) return null;
+        const path = url.pathname.toLowerCase();
+        return /\.(jpe?g|png|gif|webp|mp4|webm|mov)(\?|$)/.test(path) ? url.href : null;
+      } catch {
+        return null;
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = [...new Set(urlsInput.value.split(/\s+/).map((value) => value.trim()).filter(Boolean))];
+      const valid = values.map(directMediaUrl).filter(Boolean);
+      const rejected = values.length - valid.length;
+      queue.replaceChildren();
+      prepareButton.disabled = true;
+      status.textContent = `Preparing ${valid.length} download${valid.length === 1 ? "" : "s"}${platform === "Any" ? "" : ` for ${platform}`}.`;
+
+      valid.forEach((url, index) => {
+        const item = document.createElement("div");
+        item.className = "item";
+        item.style.animationDelay = `${index * 70}ms`;
+        item.innerHTML = `<span class="item-url"></span><a download target="_blank" rel="noopener">Download</a>`;
+        item.querySelector(".item-url").textContent = url;
+        item.querySelector("a").href = url;
+        queue.append(item);
+      });
+
+      if (rejected) {
+        status.textContent += ` ${rejected} link${rejected === 1 ? "" : "s"} need a direct media URL.`;
+      } else if (!valid.length) {
+        status.textContent = "Paste at least one direct media URL to continue.";
+      } else {
+        status.textContent = `${valid.length} download${valid.length === 1 ? "" : "s"} ready.`;
+      }
+      prepareButton.disabled = false;
+    });
+  </script>
+</body>
+</html>
