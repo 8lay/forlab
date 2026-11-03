@@ -48,8 +48,37 @@
     .button { border: 0; border-radius: 999px; padding: 13px 20px; color: white; background: linear-gradient(135deg, var(--purple), #6758e9); font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 12px 30px rgba(141,124,255,.25); }
     .button:disabled { opacity: .6; cursor: wait; }
     .status { min-height: 24px; color: var(--muted); }
-    .queue { display: grid; gap: 12px; margin-top: 22px; }
 
+    /* Fancy Block Progress Bar Styling */
+    .progress-box {
+      display: none; margin-top: 20px; padding: 18px; border: 1px solid var(--line);
+      border-radius: 18px; background: rgba(0, 0, 0, 0.4); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .progress-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; font-size: .88rem; font-weight: 700; color: var(--cyan);
+      font-family: monospace; letter-spacing: 0.05em;
+    }
+    .progress-track {
+      height: 18px; border-radius: 6px; background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line); padding: 2px; overflow: hidden; position: relative;
+    }
+    .progress-fill-blocks {
+      height: 100%; width: 0%; border-radius: 4px;
+      background: repeating-linear-gradient(
+              90deg,
+              var(--cyan) 0px,
+              var(--cyan) 12px,
+              transparent 12px,
+              transparent 16px
+      );
+      box-shadow: 0 0 15px var(--cyan);
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .block-counter { font-family: monospace; color: var(--purple); letter-spacing: 2px; font-weight: bold; }
+    .progress-ascii { margin-top: 8px; font-family: monospace; font-size: 0.85rem; color: var(--muted); letter-spacing: 1px; }
+
+    .queue { display: grid; gap: 12px; margin-top: 22px; }
     .item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.035); animation: item-in .55s cubic-bezier(.22,1,.36,1) both; }
     .item-info { min-width: 0; flex: 1; }
     .item-title { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -90,6 +119,19 @@
         <span class="status" id="status" role="status"></span>
       </div>
     </form>
+
+    <!-- Block Progress Bar Container -->
+    <div class="progress-box" id="progress-box">
+      <div class="progress-header">
+        <span>SYSTEM_EXTRACTION_RUNNING...</span>
+        <span class="block-counter" id="progress-percent">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill-blocks" id="progress-fill"></div>
+      </div>
+      <div class="progress-ascii" id="progress-ascii">[░░░░░░░░░░░░░░░░░░░░]</div>
+    </div>
+
     <div class="notice">No accounts, passwords, or private links are collected. This tool does not bypass platform protections.</div>
     <div class="queue" id="queue"></div>
   </section>
@@ -99,6 +141,10 @@
   const queue = document.querySelector("#queue");
   const status = document.querySelector("#status");
   const prepareButton = document.querySelector("#prepare-button");
+  const progressBox = document.querySelector("#progress-box");
+  const progressFill = document.querySelector("#progress-fill");
+  const progressPercent = document.querySelector("#progress-percent");
+  const progressAscii = document.querySelector("#progress-ascii");
   let platform = "Any";
 
   document.querySelectorAll(".platform").forEach((button) => {
@@ -109,6 +155,17 @@
       platform = button.dataset.platform;
     });
   });
+
+  function updateProgressBar(percentage) {
+    const pct = Math.min(100, Math.max(0, Math.round(percentage)));
+    progressFill.style.width = `${pct}%`;
+    progressPercent.textContent = `${pct}%`;
+
+    const totalBlocks = 20;
+    const filledBlocks = Math.round((pct / 100) * totalBlocks);
+    const emptyBlocks = totalBlocks - filledBlocks;
+    progressAscii.textContent = `[${'█'.repeat(filledBlocks)}${'░'.repeat(emptyBlocks)}]`;
+  }
 
   prepareButton.addEventListener("click", async () => {
     const urls = [...new Set(urlsInput.value.split(/\s+/).map((v) => v.trim()).filter(Boolean))];
@@ -121,6 +178,8 @@
 
     queue.replaceChildren();
     prepareButton.disabled = true;
+    progressBox.style.display = "block";
+    updateProgressBar(0);
     status.style.color = "var(--muted)";
     status.textContent = `Extracting ${urls.length} link${urls.length === 1 ? "" : "s"}...`;
 
@@ -156,21 +215,20 @@
           const statusSpan = item.querySelector(".item-status");
           statusSpan.textContent = (data && data.error) ? data.error : "Unable to extract link";
           statusSpan.style.color = "var(--danger)";
-          continue;
+        } else {
+          item.querySelector(".item-title").textContent = data.title;
+          const statusSpan = item.querySelector(".item-status");
+
+          const downloadBtn = document.createElement("a");
+          downloadBtn.href = data.downloadUrl;
+          downloadBtn.target = "_blank";
+          downloadBtn.rel = "noopener noreferrer";
+          downloadBtn.download = `${data.title}.${data.ext || 'mp4'}`;
+          downloadBtn.textContent = "Download ↗";
+
+          statusSpan.replaceWith(downloadBtn);
+          readyCount++;
         }
-
-        item.querySelector(".item-title").textContent = data.title;
-        const statusSpan = item.querySelector(".item-status");
-
-        const downloadBtn = document.createElement("a");
-        downloadBtn.href = data.downloadUrl;
-        downloadBtn.target = "_blank";
-        downloadBtn.rel = "noopener noreferrer";
-        downloadBtn.download = `${data.title}.${data.ext || 'mp4'}`;
-        downloadBtn.textContent = "Download ↗";
-
-        statusSpan.replaceWith(downloadBtn);
-        readyCount++;
 
       } catch (err) {
         item.querySelector(".item-title").textContent = "Extraction Failed";
@@ -178,6 +236,8 @@
         statusSpan.textContent = "Network error or API unreachable";
         statusSpan.style.color = "var(--danger)";
       }
+
+      updateProgressBar(((i + 1) / urls.length) * 100);
     }
 
     status.textContent = `${readyCount} of ${urls.length} media item${urls.length === 1 ? "" : "s"} ready.`;

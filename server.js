@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "node:crypto";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -24,6 +25,15 @@ const isWindows = os.platform() === "win32";
 const ytDlpPath = isWindows
     ? path.join(currentDirectory, "yt-dlp.exe")
     : path.join(currentDirectory, "yt-dlp");
+
+// Grant execution permissions (+x / 755) on Linux automatically
+if (!isWindows && fs.existsSync(ytDlpPath)) {
+  try {
+    fs.chmodSync(ytDlpPath, 0o755);
+  } catch (err) {
+    console.error("Failed to set executable permissions on yt-dlp binary:", err);
+  }
+}
 
 const client = process.env.MONGODB_URI
     ? new MongoClient(process.env.MONGODB_URI)
