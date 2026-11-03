@@ -23,7 +23,7 @@ const execFileAsync = promisify(execFile);
 const isWindows = os.platform() === "win32";
 const ytDlpPath = isWindows
     ? path.join(currentDirectory, "yt-dlp.exe")
-    : "yt-dlp";
+    : path.join(currentDirectory, "yt-dlp");
 
 const client = process.env.MONGODB_URI
     ? new MongoClient(process.env.MONGODB_URI)
