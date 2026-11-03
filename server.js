@@ -223,8 +223,8 @@ app.post("/api/extract", async (req, res) => {
       "-j",
       "--no-playlist",
       "--no-check-certificates",
-      "--user-agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
-      "--extractor-args", "youtube:player_client=android",
+      "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      "--extractor-args", "youtube:player_client=tv,creator",
       url.trim()
     ];
 
@@ -242,11 +242,17 @@ app.post("/api/extract", async (req, res) => {
       ext: output.ext || "mp4"
     });
   } catch (error) {
-    const errDetail = error.stderr || error.stdout || error.message || String(error);
-    console.error("yt-dlp extraction failed:", errDetail);
+    const rawError = error.stderr || error.stdout || error.message || String(error);
+    console.error("yt-dlp extraction failed:", rawError);
+
+    // Clean error message for user UI
+    const cleanError = rawError.includes("Sign in to confirm")
+        ? "YouTube requested authentication. Please add cookies.txt to backend."
+        : "Media extraction failed. Verify link is public and accessible.";
+
     return res.status(500).json({
       error: "Extraction failed",
-      details: errDetail.slice(0, 300)
+      details: cleanError
     });
   }
 });
