@@ -71,6 +71,7 @@
     .message-body { margin: 18px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
     .empty { color: var(--muted); padding: 32px 0; }
     [hidden] { display: none !important; }
+    body:not(.ready) main { visibility: hidden; }
   </style>
 </head>
 <body>
@@ -264,11 +265,16 @@
 
     const savedToken = sessionStorage.getItem(tokenKey);
     if (savedToken) {
-      loadMessages(savedToken).catch((error) => {
-        loginStatus.textContent = error.message;
-      });
+      loadMessages(savedToken)
+        .catch((error) => {
+          loginStatus.textContent = error.message;
+        })
+        .finally(() => {
+          document.body.classList.add("ready");
+        });
     } else {
       showLogin();
+      document.body.classList.add("ready");
     }
   </script>
 </body>
