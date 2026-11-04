@@ -217,8 +217,8 @@ async function extractYouTubeMedia(url, res) {
           "--no-playlist",
           "--no-warnings",
           "--skip-download",
+          "--js-runtimes", "node",
           "--cookies", cookiesPath,
-          "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "--extractor-args", "youtube:player_client=android,web",
           "-f", "bestvideo+bestaudio/best",
           url
@@ -237,8 +237,6 @@ async function extractYouTubeMedia(url, res) {
     }
 
     const info = JSON.parse(stdout.substring(jsonStart, jsonEnd + 1));
-
-    // Fall back to best available single format or requested format stream
     const format = info.url
         ? info
         : (info.requested_formats?.[0] || info.formats?.[info.formats.length - 1]);

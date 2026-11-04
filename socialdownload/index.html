@@ -222,12 +222,24 @@
       item.querySelector(".item-url").textContent = url;
       queue.append(item);
 
+      // Smoothly animate progress upward while awaiting the fetch request
+      const baseProgress = (i / urls.length) * 90;
+      setCyberProgress(Math.max(5, baseProgress));
+
+      let fakeProgress = baseProgress;
+      const progressInterval = setInterval(() => {
+        fakeProgress = Math.min(baseProgress + ((1 / urls.length) * 85), fakeProgress + 1);
+        setCyberProgress(fakeProgress);
+      }, 150);
+
       try {
         const response = await fetch("https://api.forlab.me/api/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
         });
+
+        clearInterval(progressInterval);
 
         const data = await response.json();
 
@@ -254,6 +266,7 @@
         }
 
       } catch (err) {
+        clearInterval(progressInterval);
         item.querySelector(".item-title").textContent = "Extraction Failed";
         const statusSpan = item.querySelector(".item-status");
         statusSpan.textContent = "Network error or API unreachable";
@@ -263,9 +276,11 @@
       setCyberProgress(((i + 1) / urls.length) * 100);
     }
 
+    setCyberProgress(100);
     status.textContent = `${readyCount} of ${urls.length} media item${urls.length === 1 ? "" : "s"} ready.`;
     prepareButton.disabled = false;
   });
+
 </script>
 </body>
 </html>
