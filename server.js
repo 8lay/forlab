@@ -204,32 +204,44 @@ app.post("/api/extract", (req, res) => {
     ext: extension.toLowerCase()
   });
 });
+const path = require("path");
+const { execFile } = require("child_process");
+const util = require("util");
+const execFileAsync = util.promisify(execFile);
 
 async function extractYouTubeMedia(url, res) {
   try {
-    const { stdout, stderr } = await execFileAsync(
-        path.join(currentDirectory, "yt-dlp"),
+    // Explicitly target the yt-dlp binary in the same directory as server.js
+    const ytDlpPath = path.resolve(__dirname, "yt-dlp");
+
+    const { stdout } = await execFileAsync(
+        ytDlpPath,
         [
           "--dump-single-json",
           "--no-playlist",
           "--no-warnings",
           "--skip-download",
-          "--cookies", path.join(currentDirectory, "cookies.txt"),
-          "--extractor-args", "youtube:player_client=ios,web",
-          "--format", "best[ext=mp4]/best",
           url
         ],
         {
           timeout: 30000,
-          maxBuffer: 10 * 1024 * 1024
+          maxBuffer: 15 * 1024 * 1024 // 15MB buffer limit
         }
     );
 
-    const info = JSON.parse(stdout);
+    // Extract clean JSON payload even if warnings slip into stdout
+    const jsonStart = stdout.indexOf("{");
+    const jsonEnd = stdout.lastIndexOf("}");
+
+    if (jsonStart === -1 || jsonEnd === -1) {
+      return res.status(422).json({ error: "Invalid response format from extractor." });
+    }
+
+    const info = JSON.parse(stdout.substring(jsonStart, jsonEnd + 1));
     const format = info.requested_formats?.[0] ?? info;
 
     if (!format.url) {
-      return res.status(422).json({ error: "No downloadable public stream was found." });
+      return res.status(422).json({ error: "No downloadable public stream found." });
     }
 
     return res.json({
@@ -238,10 +250,13 @@ async function extractYouTubeMedia(url, res) {
       thumbnail: info.thumbnail,
       ext: format.ext || "mp4"
     });
+
   } catch (error) {
-    console.error("yt-dlp extraction error:", error.stderr || error.message || error);
+    // Log the actual stdout/stderr to your server console so you can inspect it
+    console.error("yt-dlp exec error:", error.stderr || error.stdout || error.message);
+
     return res.status(422).json({
-      error: "YouTube could not provide a public download stream."
+      error: error.stderr || error.message || "Failed to process video link."
     });
   }
 }
