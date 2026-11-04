@@ -208,20 +208,23 @@ app.post("/api/extract", (req, res) => {
 async function extractYouTubeMedia(url, res) {
   try {
     const { stdout } = await execFileAsync(
-      path.join(currentDirectory, "yt-dlp"),
-      [
-        "--dump-single-json",
-        "--no-playlist",
-        "--no-warnings",
-        "--skip-download",
-        "--format", "best[ext=mp4]/best",
-        url
-      ],
-      {
-        timeout: 30_000,
-        maxBuffer: 2 * 1024 * 1024
-      }
+        path.join(currentDirectory, "yt-dlp"),
+        [
+          "--dump-single-json",
+          "--no-playlist",
+          "--no-warnings",
+          "--skip-download",
+          "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "--extractor-args", "youtube:player_client=ios,web",
+          "--format", "best[ext=mp4]/best",
+          url
+        ],
+        {
+          timeout: 30000,
+          maxBuffer: 10 * 1024 * 1024 // 10MB buffer size
+        }
     );
+
     const info = JSON.parse(stdout);
     const format = info.requested_formats?.[0] ?? info;
 
@@ -242,7 +245,6 @@ async function extractYouTubeMedia(url, res) {
     });
   }
 }
-
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};
 
