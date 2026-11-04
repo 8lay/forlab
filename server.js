@@ -260,7 +260,68 @@ async function extractYouTubeMedia(url, res) {
     });
   }
 }
+async function extractYouTubeMedia(url, res) {
+  try {
+    const ytDlpPath = path.resolve(currentDirectory, "yt-dlp");
+    const cookiesPath = path.resolve(currentDirectory, "cookies.txt");
 
+    const { stdout } = await execFileAsync(
+        ytDlpPath,
+        [
+          "--dump-single-json",
+          "--no-playlist",
+          "--no-warnings",
+          "--skip-download",
+          "--js-runtimes", "node",
+          "--cookies", cookiesPath,
+          "--extractor-args", "youtube:player_client=android,web",
+          // Change format selector to pick the best quality stream that already has audio included
+          "-f", "best[height<=1080]/best",
+          url
+        ],
+        {
+          timeout: 30000,
+          maxBuffer: 15 * 1024 * 1024
+        }
+    );
+
+    const jsonStart = stdout.indexOf("{");
+    const jsonEnd = stdout.lastIndexOf("}");
+
+    if (jsonStart === -1 || jsonEnd === -1) {
+      return res.status(422).json({ error: "Invalid response format from extractor." });
+    }
+
+    const info = JSON.parse(stdout.substring(jsonStart, jsonEnd + 1));
+    
+    // Find the best matching format from the formats array
+    const formats = info.formats || [];
+    // Filter formats that have both video and audio (vcodec != none and acodec != none)
+    const progressiveFormats = formats.filter(f => f.vcodec !== 'none' && f.acodec !== 'none');
+    
+    const bestFormat = progressiveFormats.length > 0 
+      ? progressiveFormats[progressiveFormats.length - 1] 
+      : (info.requested_formats?.[0] || info);
+
+    if (!bestFormat || !bestFormat.url) {
+      return res.status(422).json({ error: "No downloadable public stream found." });
+    }
+
+    return res.json({
+      title: info.title || "downloaded_media",
+      downloadUrl: bestFormat.url,
+      thumbnail: info.thumbnail,
+      ext: bestFormat.ext || "mp4"
+    });
+
+  } catch (error) {
+    console.error("yt-dlp exec error:", error.stderr || error.stdout || error.message);
+
+    return res.status(422).json({
+      error: error.stderr || error.message || "Failed to process video link."
+    });
+  }
+}
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};
 
