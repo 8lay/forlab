@@ -16,7 +16,8 @@ const allowedOrigins = new Set([
   "https://www.forlab.me",
   "https://socialdownload.forlab.me",
   "http://localhost:3000",
-  "http://127.0.0.1:3000"
+  "http://127.0.0.1:3000",
+  "https://socialdownload.forlab.me"
 ]);
 
 const client = process.env.MONGODB_URI
