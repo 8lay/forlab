@@ -223,7 +223,7 @@
       queue.append(item);
 
       try {
-        const response = await fetch("https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net/api/extract", {
+        const response = await fetch("http://158.158.18.45:3000/api/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
