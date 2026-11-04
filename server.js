@@ -183,9 +183,9 @@ app.post("/api/extract", (req, res) => {
   }
 
   const isYouTube = mediaUrl.hostname === "youtu.be" ||
-    mediaUrl.hostname === "www.youtube.com" ||
-    mediaUrl.hostname === "youtube.com" ||
-    mediaUrl.hostname === "m.youtube.com";
+      mediaUrl.hostname === "www.youtube.com" ||
+      mediaUrl.hostname === "youtube.com" ||
+      mediaUrl.hostname === "m.youtube.com";
 
   if (isYouTube) {
     return extractYouTubeMedia(mediaUrl.href, res);
@@ -204,15 +204,11 @@ app.post("/api/extract", (req, res) => {
     ext: extension.toLowerCase()
   });
 });
-const path = require("path");
-const { execFile } = require("child_process");
-const util = require("util");
-const execFileAsync = util.promisify(execFile);
 
 async function extractYouTubeMedia(url, res) {
   try {
-    // Explicitly target the yt-dlp binary in the same directory as server.js
-    const ytDlpPath = path.resolve(__dirname, "yt-dlp");
+    const ytDlpPath = path.resolve(currentDirectory, "yt-dlp");
+    const cookiesPath = path.resolve(currentDirectory, "cookies.txt");
 
     const { stdout } = await execFileAsync(
         ytDlpPath,
@@ -221,15 +217,18 @@ async function extractYouTubeMedia(url, res) {
           "--no-playlist",
           "--no-warnings",
           "--skip-download",
+          "--cookies", cookiesPath,
+          "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "--extractor-args", "youtube:player_client=android,web",
+          "-f", "bestvideo+bestaudio/best",
           url
         ],
         {
           timeout: 30000,
-          maxBuffer: 15 * 1024 * 1024 // 15MB buffer limit
+          maxBuffer: 15 * 1024 * 1024
         }
     );
 
-    // Extract clean JSON payload even if warnings slip into stdout
     const jsonStart = stdout.indexOf("{");
     const jsonEnd = stdout.lastIndexOf("}");
 
@@ -238,9 +237,13 @@ async function extractYouTubeMedia(url, res) {
     }
 
     const info = JSON.parse(stdout.substring(jsonStart, jsonEnd + 1));
-    const format = info.requested_formats?.[0] ?? info;
 
-    if (!format.url) {
+    // Fall back to best available single format or requested format stream
+    const format = info.url
+        ? info
+        : (info.requested_formats?.[0] || info.formats?.[info.formats.length - 1]);
+
+    if (!format || !format.url) {
       return res.status(422).json({ error: "No downloadable public stream found." });
     }
 
@@ -252,7 +255,6 @@ async function extractYouTubeMedia(url, res) {
     });
 
   } catch (error) {
-    // Log the actual stdout/stderr to your server console so you can inspect it
     console.error("yt-dlp exec error:", error.stderr || error.stdout || error.message);
 
     return res.status(422).json({
