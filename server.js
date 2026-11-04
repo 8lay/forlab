@@ -220,7 +220,7 @@ async function extractYouTubeMedia(url, res) {
           "--js-runtimes", "node",
           "--cookies", cookiesPath,
           "--extractor-args", "youtube:player_client=android,web",
-          "--geo-bypass",
+          "--geo-bypass-country", "JO",
           "-f", "best[height<=1080]/best",
           url
         ],
