@@ -1,9 +1,12 @@
 import express from "express";
 import crypto from "node:crypto";
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { MongoClient, ObjectId } from "mongodb";
 
+const execFileAsync = promisify(execFile);
 const app = express();
 const port = process.env.PORT || 3000;
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -179,6 +182,15 @@ app.post("/api/extract", (req, res) => {
     return res.status(400).json({ error: "Only HTTP and HTTPS URLs are supported." });
   }
 
+  const isYouTube = mediaUrl.hostname === "youtu.be" ||
+    mediaUrl.hostname === "www.youtube.com" ||
+    mediaUrl.hostname === "youtube.com" ||
+    mediaUrl.hostname === "m.youtube.com";
+
+  if (isYouTube) {
+    return extractYouTubeMedia(mediaUrl.href, res);
+  }
+
   const extension = mediaUrl.pathname.match(/\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i)?.[1];
   if (!extension) {
     return res.status(422).json({
@@ -192,6 +204,44 @@ app.post("/api/extract", (req, res) => {
     ext: extension.toLowerCase()
   });
 });
+
+async function extractYouTubeMedia(url, res) {
+  try {
+    const { stdout } = await execFileAsync(
+      path.join(currentDirectory, "yt-dlp"),
+      [
+        "--dump-single-json",
+        "--no-playlist",
+        "--no-warnings",
+        "--skip-download",
+        "--format", "best[ext=mp4]/best",
+        url
+      ],
+      {
+        timeout: 30_000,
+        maxBuffer: 2 * 1024 * 1024
+      }
+    );
+    const info = JSON.parse(stdout);
+    const format = info.requested_formats?.[0] ?? info;
+
+    if (!format.url) {
+      return res.status(422).json({ error: "No downloadable public stream was found." });
+    }
+
+    return res.json({
+      title: info.title || "downloaded_media",
+      downloadUrl: format.url,
+      thumbnail: info.thumbnail,
+      ext: format.ext || "mp4"
+    });
+  } catch (error) {
+    console.error("yt-dlp extraction error:", error);
+    return res.status(422).json({
+      error: "YouTube could not provide a public download stream. Use a public video you own or are authorized to save."
+    });
+  }
+}
 
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};

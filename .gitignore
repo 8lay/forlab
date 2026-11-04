@@ -9,3 +9,4 @@ npm-debug.log*
 
 cookies.txt
 yt-dlp
+!yt-dlp
