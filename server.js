@@ -207,21 +207,21 @@ app.post("/api/extract", (req, res) => {
 
 async function extractYouTubeMedia(url, res) {
   try {
-    const { stdout } = await execFileAsync(
+    const { stdout, stderr } = await execFileAsync(
         path.join(currentDirectory, "yt-dlp"),
         [
           "--dump-single-json",
           "--no-playlist",
           "--no-warnings",
           "--skip-download",
-          "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "--cookies", path.join(currentDirectory, "cookies.txt"),
           "--extractor-args", "youtube:player_client=ios,web",
           "--format", "best[ext=mp4]/best",
           url
         ],
         {
           timeout: 30000,
-          maxBuffer: 10 * 1024 * 1024 // 10MB buffer size
+          maxBuffer: 10 * 1024 * 1024
         }
     );
 
@@ -239,12 +239,13 @@ async function extractYouTubeMedia(url, res) {
       ext: format.ext || "mp4"
     });
   } catch (error) {
-    console.error("yt-dlp extraction error:", error);
+    console.error("yt-dlp extraction error:", error.stderr || error.message || error);
     return res.status(422).json({
-      error: "YouTube could not provide a public download stream. Use a public video you own or are authorized to save."
+      error: "YouTube could not provide a public download stream."
     });
   }
 }
+
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};
 
