@@ -3,335 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Personal website of mine">
+  <meta name="description" content="Forlab is a playful learning space for curious minds.">
   <link rel="icon" type="image/png" href="/favicon.png">
-  <title>Layth | Personal Website</title>
+  <title>Forlab — Learn in motion</title>
   <style>
     :root {
-      --bg: #0b1020;
-      --surface: rgba(18, 27, 52, .78);
-      --text: #f5f7ff;
-      --muted: #aab4d0;
-      --accent: #8b7cff;
-      --accent-2: #43d9c5;
-      --border: rgba(255, 255, 255, .12);
-      --shadow: 0 24px 80px rgba(0, 0, 0, .28);
+      --ink: #122033;
+      --muted: #64748b;
+      --paper: #f7f9fc;
+      --card: rgba(255,255,255,.82);
+      --line: rgba(18,32,51,.1);
+      --blue: #2878f0;
+      --mint: #2ec9a6;
+      --yellow: #ffd35a;
+      --shadow: 0 30px 90px rgba(38, 65, 103, .14);
     }
-
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    @media (prefers-reduced-motion: no-preference) {
-      body { animation: page-in .8s cubic-bezier(.22, 1, .36, 1) both; }
-      .hero > div:first-child { animation: rise-in .9s .08s cubic-bezier(.22, 1, .36, 1) both; }
-      .portrait { animation: float-in 1s .18s cubic-bezier(.22, 1, .36, 1) both, drift 7s 1.2s ease-in-out infinite; }
-      .card { animation: rise-in .8s cubic-bezier(.22, 1, .36, 1) both; }
-      .card:nth-child(2) { animation-delay: .08s; }
-      .card:nth-child(3) { animation-delay: .16s; }
-      .button { transition: transform .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s ease, background .25s ease; }
-      .button:hover { transform: translateY(-3px); box-shadow: 0 16px 38px rgba(139, 124, 255, .32); }
-      .card { transition: transform .35s cubic-bezier(.22, 1, .36, 1), border-color .35s ease; }
-      .card:hover { transform: translateY(-7px); border-color: rgba(139, 124, 255, .42); }
-      @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes rise-in { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes float-in { from { opacity: 0; transform: rotate(3deg) scale(.92); } to { opacity: 1; transform: rotate(3deg) scale(1); } }
-      @keyframes drift { 0%, 100% { transform: rotate(3deg) translateY(0); } 50% { transform: rotate(1deg) translateY(-10px); } }
-    }
     body {
-      margin: 0;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 10%, rgba(139, 124, 255, .22), transparent 30rem),
-        radial-gradient(circle at 85% 20%, rgba(67, 217, 197, .13), transparent 26rem),
-        var(--bg);
-      font: 16px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      margin: 0; color: var(--ink); background:
+        radial-gradient(circle at 8% 12%, rgba(255,211,90,.32), transparent 24rem),
+        radial-gradient(circle at 92% 18%, rgba(46,201,166,.2), transparent 30rem),
+        var(--paper);
+      font: 16px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
     }
-
     a { color: inherit; text-decoration: none; }
-    .container { width: min(1100px, calc(100% - 40px)); margin: auto; }
-    .nav {
-      position: sticky; top: 0; z-index: 5;
-      backdrop-filter: blur(18px);
-      background: rgba(11, 16, 32, .7);
-      border-bottom: 1px solid var(--border);
+    .wrap { width: min(1160px, calc(100% - 40px)); margin: auto; }
+    .nav { position: sticky; top: 0; z-index: 4; background: rgba(247,249,252,.78); backdrop-filter: blur(20px); border-bottom: 1px solid var(--line); }
+    .nav-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .logo { font-size: 1.3rem; font-weight: 900; letter-spacing: -.06em; }
+    .logo i { color: var(--blue); font-style: normal; }
+    .nav-links { display: flex; gap: 28px; color: var(--muted); font-size: .94rem; }
+    .nav-links a:hover { color: var(--ink); }
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 19px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--ink); color: white; font-weight: 800; box-shadow: 0 12px 24px rgba(18,32,51,.14);
+      transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, background .3s ease;
     }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      min-height: 72px;
-    }
-    .logo { font-weight: 800; letter-spacing: -.04em; font-size: 1.25rem; }
-    .logo span { color: var(--accent-2); }
-    .links { display: flex; gap: 24px; color: var(--muted); }
-    .links a:hover { color: var(--text); }
-    .button {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid var(--border); border-radius: 999px;
-      padding: 11px 18px; background: var(--accent); color: white;
-      font-weight: 700; box-shadow: 0 10px 30px rgba(139, 124, 255, .25);
-    }
-    .button.secondary { background: transparent; box-shadow: none; }
-    .hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 60px; align-items: center; min-height: 680px; }
-    .eyebrow { color: var(--accent-2); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { font-size: clamp(3rem, 8vw, 6.5rem); line-height: .98; letter-spacing: -.075em; margin: 18px 0; }
-    h1 em { color: var(--accent); font-style: normal; }
-    .lead { max-width: 600px; color: var(--muted); font-size: 1.2rem; }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
-    .portrait {
-      aspect-ratio: 1; border-radius: 32px; border: 1px solid var(--border);
-      display: grid; place-items: center; font-size: 7rem; font-weight: 900;
-      background: linear-gradient(145deg, rgba(139,124,255,.55), rgba(67,217,197,.2));
-      box-shadow: var(--shadow); transform: rotate(3deg);
-    }
-    section { padding: 90px 0; }
-    .section-title { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1; letter-spacing: -.06em; margin: 0 0 35px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    .card {
-      padding: 25px; border: 1px solid var(--border); border-radius: 22px;
-      background: var(--surface); box-shadow: var(--shadow);
-    }
-    .card h3 { margin-top: 0; }
-    .card p, .about { color: var(--muted); }
-    .tag { color: var(--accent-2); font-size: .85rem; font-weight: 700; }
-    .contact { text-align: center; padding-bottom: 120px; }
-    .contact p { color: var(--muted); }
-    .contact-form { max-width: 620px; margin: 30px auto 0; text-align: left; }
-    .contact-form label { display: block; margin: 14px 0 6px; font-weight: 700; }
-    .contact-form input, .contact-form textarea {
-      width: 100%; padding: 13px 15px; color: var(--text);
-      background: rgba(11, 16, 32, .7); border: 1px solid var(--border);
-      border-radius: 12px; font: inherit;
-    }
-    .contact-form textarea { min-height: 150px; resize: vertical; }
-    .contact-form input:focus, .contact-form textarea:focus {
-      outline: 2px solid var(--accent); outline-offset: 2px;
-    }
-    .contact-form input, .contact-form textarea {
-      transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
-    }
-    .contact-form input:focus, .contact-form textarea:focus {
-      box-shadow: 0 0 0 5px rgba(139, 124, 255, .12);
-      transform: translateY(-2px);
-    }
-    .contact-form textarea { transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
-    .message-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .85rem; }
-    .contact-form .button { margin-top: 22px; }
-    .email-choice {
-      display: flex; align-items: center; gap: 10px; margin: 18px 0 0;
-      color: var(--muted); font-size: .92rem;
-    }
-    .email-choice input { width: auto; accent-color: var(--accent); }
-    .email-choice + .email-choice { margin-top: 6px; }
-    .optional-email { overflow: hidden; max-height: 0; opacity: 0; transform: translateY(-8px);
-      transition: max-height .35s ease, opacity .35s ease, transform .35s ease; }
-    .optional-email.is-visible { max-height: 100px; opacity: 1; transform: translateY(0); }
-    .loader {
-      position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
-      background: var(--bg); transition: opacity .55s ease, visibility .55s ease;
-    }
-    .loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .loader-grid { display: grid; grid-template-columns: repeat(5, 14px); gap: 7px; transform: rotate(-8deg); }
-    .loader-block { width: 14px; height: 14px; border-radius: 4px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      box-shadow: 0 0 18px rgba(139, 124, 255, .42); opacity: 0; transform: scale(.2);
-      animation: block-in .65s cubic-bezier(.22, 1, .36, 1) forwards; }
-    .loader-block:nth-child(1) { grid-column: 2; grid-row: 1; animation-delay: .05s; }
-    .loader-block:nth-child(2) { grid-column: 4; grid-row: 1; animation-delay: .12s; }
-    .loader-block:nth-child(3) { grid-column: 1; grid-row: 2; animation-delay: .19s; }
-    .loader-block:nth-child(4) { grid-column: 2; grid-row: 2; animation-delay: .26s; }
-    .loader-block:nth-child(5) { grid-column: 3; grid-row: 2; animation-delay: .33s; }
-    .loader-block:nth-child(6) { grid-column: 4; grid-row: 2; animation-delay: .4s; }
-    .loader-block:nth-child(7) { grid-column: 5; grid-row: 2; animation-delay: .47s; }
-    .loader-block:nth-child(8) { grid-column: 1; grid-row: 3; animation-delay: .54s; }
-    .loader-block:nth-child(9) { grid-column: 2; grid-row: 3; animation-delay: .61s; }
-    .loader-block:nth-child(10) { grid-column: 4; grid-row: 3; animation-delay: .68s; }
-    .loader-block:nth-child(11) { grid-column: 5; grid-row: 3; animation-delay: .75s; }
-    .loader-block:nth-child(12) { grid-column: 1; grid-row: 4; animation-delay: .82s; }
-    .loader-block:nth-child(13) { grid-column: 2; grid-row: 4; animation-delay: .89s; }
-    .loader-block:nth-child(14) { grid-column: 3; grid-row: 4; animation-delay: .96s; }
-    .loader-block:nth-child(15) { grid-column: 4; grid-row: 4; animation-delay: 1.03s; }
-    .loader-block:nth-child(16) { grid-column: 5; grid-row: 4; animation-delay: 1.1s; }
-    .loader-block:nth-child(17) { grid-column: 2; grid-row: 5; animation-delay: 1.17s; }
-    .loader-block:nth-child(18) { grid-column: 4; grid-row: 5; animation-delay: 1.24s; }
-    @keyframes block-in { 0% { opacity: 0; transform: scale(.2) translateY(10px); }
-      70% { opacity: 1; transform: scale(1.15) translateY(-2px); }
-      100% { opacity: 1; transform: scale(1) translateY(0); } }
-    @media (prefers-reduced-motion: reduce) {
-      .loader-block { opacity: 1; transform: none; animation: none; }
-      .loader { transition: none; }
-      .optional-email { transition: none; }
-    }
-    .form-status { min-height: 1.6em; margin: 14px 0 0; }
-    footer { border-top: 1px solid var(--border); padding: 25px 0; color: var(--muted); }
-
-    @media (max-width: 750px) {
-      .links { display: none; }
-      .hero { grid-template-columns: 1fr; min-height: auto; padding: 90px 0 50px; }
-      .portrait { max-width: 280px; margin: auto; }
-      .grid { grid-template-columns: 1fr; }
-      section { padding: 60px 0; }
+    .pill:hover { transform: translateY(-3px); box-shadow: 0 18px 34px rgba(18,32,51,.2); }
+    .pill.blue { background: var(--blue); box-shadow: 0 14px 30px rgba(40,120,240,.25); }
+    .pill.light { background: rgba(255,255,255,.7); color: var(--ink); box-shadow: none; }
+    .hero { min-height: 680px; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 70px; padding: 80px 0 110px; }
+    .kicker { color: var(--blue); font-size: .78rem; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 18px 0 24px; font-size: clamp(3.6rem, 8vw, 7.6rem); line-height: .9; letter-spacing: -.095em; }
+    h1 span { color: var(--blue); }
+    .hero-copy { max-width: 570px; color: var(--muted); font-size: 1.18rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .orbital { position: relative; min-height: 480px; display: grid; place-items: center; }
+    .orbital::before, .orbital::after { content: ""; position: absolute; border: 1px solid rgba(40,120,240,.2); border-radius: 50%; transform: rotate(-18deg); }
+    .orbital::before { width: 430px; height: 190px; }
+    .orbital::after { width: 500px; height: 250px; transform: rotate(38deg); border-color: rgba(46,201,166,.25); }
+    .planet { position: relative; z-index: 1; width: 270px; height: 270px; display: grid; place-items: center; border-radius: 35% 65% 58% 42% / 42% 45% 55% 58%; color: white; font-size: 5.2rem; background: linear-gradient(145deg, #2878f0, #6b5cff 68%, #bda9ff); box-shadow: 25px 30px 70px rgba(40,120,240,.3), inset -18px -20px 30px rgba(12,44,124,.2); animation: breathe 6s ease-in-out infinite; }
+    .orbit-card { position: absolute; z-index: 2; padding: 15px 17px; border: 1px solid rgba(255,255,255,.7); border-radius: 18px; background: rgba(255,255,255,.78); box-shadow: var(--shadow); backdrop-filter: blur(14px); font-weight: 800; }
+    .orbit-card small { display: block; color: var(--muted); font-weight: 600; }
+    .orbit-card.one { top: 38px; right: 12px; transform: rotate(5deg); }
+    .orbit-card.two { bottom: 40px; left: 0; transform: rotate(-6deg); }
+    section { padding: 100px 0; }
+    .section-heading { max-width: 650px; margin-bottom: 34px; }
+    .section-heading h2 { margin: 9px 0; font-size: clamp(2.4rem, 5vw, 4.7rem); line-height: .95; letter-spacing: -.08em; }
+    .section-heading p { color: var(--muted); font-size: 1.08rem; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .feature { min-height: 260px; padding: 27px; border: 1px solid var(--line); border-radius: 28px; background: var(--card); box-shadow: var(--shadow); transition: transform .4s cubic-bezier(.22,1,.36,1), box-shadow .4s ease; }
+    .feature:hover { transform: translateY(-9px) rotate(-1deg); box-shadow: 0 38px 80px rgba(38,65,103,.18); }
+    .feature-icon { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: 26px; border-radius: 15px; background: var(--yellow); font-size: 1.4rem; }
+    .feature:nth-child(2) .feature-icon { background: #c9f4e8; }
+    .feature:nth-child(3) .feature-icon { background: #d7e5ff; }
+    .feature h3 { margin: 0 0 8px; font-size: 1.3rem; }
+    .feature p { margin: 0; color: var(--muted); }
+    .path { padding: 30px; border-radius: 34px; background: var(--ink); color: white; overflow: hidden; position: relative; }
+    .path::after { content: ""; position: absolute; width: 280px; height: 280px; right: -80px; top: -110px; border-radius: 50%; background: var(--blue); opacity: .7; filter: blur(4px); }
+    .path-content { position: relative; z-index: 1; max-width: 650px; }
+    .path h2 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3.8rem); line-height: .98; letter-spacing: -.07em; }
+    .path p { color: #b6c2d5; }
+    .steps { display: flex; gap: 10px; margin: 26px 0 30px; }
+    .step { flex: 1; padding: 13px 15px; border: 1px solid rgba(255,255,255,.15); border-radius: 16px; background: rgba(255,255,255,.06); color: #d9e3f2; font-size: .9rem; }
+    .step strong { display: block; color: white; font-size: 1.3rem; }
+    footer { padding: 25px 0 45px; color: var(--muted); font-size: .9rem; }
+    @keyframes breathe { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-13px) rotate(3deg); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    @media (max-width: 760px) {
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 25px; padding-top: 65px; }
+      .orbital { min-height: 370px; transform: scale(.82); margin: -35px 0; }
+      .features { grid-template-columns: 1fr; }
+      .steps { flex-direction: column; }
+      section { padding: 70px 0; }
     }
   </style>
 </head>
 <body>
-  <div class="loader" id="loader" role="status" aria-label="Loading Forlab">
-    <div class="loader-grid" aria-hidden="true">
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-      <span class="loader-block"></span><span class="loader-block"></span><span class="loader-block"></span>
-    </div>
-  </div>
   <nav class="nav">
-    <div class="container nav-inner">
-      <a class="logo" href="#">For<span>Lab</span>.</a>
-      <div class="links">
-        <a href="#about">About</a>
-        <a href="#work">Work</a>
-        <a href="#contact">Contact</a>
-      </div>
-      <a class="button secondary" href="#contact">Say hello</a>
+    <div class="wrap nav-inner">
+      <a class="logo" href="/">For<i>Lab</i>.</a>
+      <div class="nav-links"><a href="#why">Why Forlab</a><a href="#path">Your path</a><a href="https://github.com/8lay">GitHub ↗</a></div>
+      <a class="pill light" href="https://interactive.forlab.me/subjects/">Start learning <span aria-hidden="true">↗</span></a>
     </div>
   </nav>
 
   <main>
-    <section class="container hero">
+    <section class="wrap hero">
       <div>
-        <div class="eyebrow">Hello, I'm Layth Al Abed </div>
-        <h1>I am  <em>EAGER</em> for the future</h1>
-        <p class="lead">I'm a Computer Science undergrad at the University of Jordan. I'm passionate about the advancements in AI and interested in utilising its new capabilities to facilitate everyday tasks.</p>
+        <div class="kicker">A learning playground for curious people</div>
+        <h1>Make ideas <span>click.</span></h1>
+        <p class="hero-copy">Forlab turns difficult subjects into small, visual adventures. Explore a concept, play with it, and prove what you know — one satisfying “aha” at a time.</p>
         <div class="actions">
-          <a class="button" href="#work">See my work</a>
-          <a class="button secondary" href="https://github.com/8lay">GitHub ↗</a>
-          <a class="button secondary" href="https://socialdownload.forlab.me">Social download ↗</a>
+          <a class="pill blue" href="https://interactive.forlab.me/subjects/">Explore interactive lectures <span aria-hidden="true">↗</span></a>
+          <a class="pill light" href="#why">See how it works</a>
         </div>
       </div>
-      <div class="portrait" aria-label="Profile placeholder">YN</div>
-    </section>
-
-    <section id="about">
-      <div class="container">
-        <h2 class="section-title">A little about me</h2>
-        <p class="about">Write a short paragraph here about who you are, what you enjoy, and what you are working toward. Keep it honest, specific, and easy to read. This is where visitors get to know the person behind the projects.</p>
+      <div class="orbital" aria-label="Abstract illustration of ideas orbiting a learning planet">
+        <div class="planet">✦</div>
+        <div class="orbit-card one">Learn by doing<small>Not just watching</small></div>
+        <div class="orbit-card two">Curiosity → clarity<small>One concept at a time</small></div>
       </div>
     </section>
 
-    <section id="work">
-      <div class="container">
-        <h2 class="section-title">Things I've built</h2>
-        <div class="grid">
-          <article class="card">
-            <div class="tag">PROJECT 01</div>
-            <h3>Project name</h3>
-            <p>Describe what you made, why you made it, and what you learned.</p>
-            <a href="#" class="tag">View project ↗</a>
-          </article>
-          <article class="card">
-            <div class="tag">PROJECT 02</div>
-            <h3>Another project</h3>
-            <p>Add a second project, experiment, design, or achievement here.</p>
-            <a href="#" class="tag">View project ↗</a>
-          </article>
-          <article class="card">
-            <div class="tag">NOW</div>
-            <h3>Currently learning</h3>
-            <p>HTML, CSS, JavaScript, and whatever interesting challenge comes next.</p>
-          </article>
+    <section class="wrap" id="why">
+      <div class="section-heading">
+        <div class="kicker">The Forlab approach</div>
+        <h2>Learning should feel alive.</h2>
+        <p>Every lecture is designed as a short journey: see the idea move, interact with the pieces, then answer a question that makes the knowledge stick.</p>
+      </div>
+      <div class="features">
+        <article class="feature"><div class="feature-icon">◌</div><h3>See it move</h3><p>Beautiful, purposeful animations make invisible systems and abstract ideas easier to hold in your mind.</p></article>
+        <article class="feature"><div class="feature-icon">✦</div><h3>Touch the idea</h3><p>Drag, reveal, compare, and experiment. Your choices are part of the explanation, not a distraction from it.</p></article>
+        <article class="feature"><div class="feature-icon">✓</div><h3>Make it yours</h3><p>Low-pressure questions give you an instant signal of what clicked and what deserves another look.</p></article>
+      </div>
+    </section>
+
+    <section class="wrap" id="path">
+      <div class="path">
+        <div class="path-content">
+          <div class="kicker">Your next small win</div>
+          <h2>Pick a subject. Follow the spark.</h2>
+          <p>Choose an area you want to understand and step into a collection of interactive lectures made for exploration.</p>
+          <div class="steps"><div class="step"><strong>01</strong>Choose</div><div class="step"><strong>02</strong>Explore</div><div class="step"><strong>03</strong>Answer</div></div>
+          <a class="pill blue" href="https://interactive.forlab.me/subjects/">Browse subjects <span aria-hidden="true">↗</span></a>
         </div>
-      </div>
-    </section>
-
-    <section id="contact" class="contact">
-      <div class="container">
-        <h2 class="section-title">Let's connect.</h2>
-        <p>Have an idea or just want to say hi? Leave a note — no email required.</p>
-        <form class="contact-form" id="contact-form">
-          <label for="name">Name</label>
-          <input id="name" name="name" autocomplete="name" required>
-          <div class="email-choice">Want a reply by email? <span>(optional)</span></div>
-          <label class="email-choice"><input name="email-choice" type="radio" value="no" checked> No, just leave my message</label>
-          <label class="email-choice"><input id="share-email" name="email-choice" type="radio" value="yes"> Yes, I want a reply</label>
-          <div class="optional-email" id="optional-email">
-            <label for="email">Email address</label>
-            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" disabled>
-          </div>
-          <label for="message">Message</label>
-          <textarea id="message" name="message" maxlength="5000" required></textarea>
-          <div class="message-meta"><span>Say whatever is on your mind.</span><span id="message-count">0 / 5000</span></div>
-          <button class="button" type="submit">Send message <span aria-hidden="true">↗</span></button>
-          <p class="form-status" id="form-status" role="status"></p>
-        </form>
       </div>
     </section>
   </main>
-
-  <script>
-    const contactForm = document.querySelector("#contact-form");
-    const formStatus = document.querySelector("#form-status");
-    const loader = document.querySelector("#loader");
-    const shareEmail = document.querySelector("#share-email");
-    const optionalEmail = document.querySelector("#optional-email");
-    const emailInput = document.querySelector("#email");
-    const messageInput = document.querySelector("#message");
-    const messageCount = document.querySelector("#message-count");
-    const sendButton = contactForm.querySelector("button");
-
-    document.querySelectorAll('input[name="email-choice"]').forEach((choice) => {
-      choice.addEventListener("change", () => {
-        optionalEmail.classList.toggle("is-visible", shareEmail.checked);
-        emailInput.disabled = !shareEmail.checked;
-        emailInput.required = shareEmail.checked;
-        if (shareEmail.checked) emailInput.focus();
-      });
-    });
-
-    messageInput.addEventListener("input", () => {
-      messageCount.textContent = `${messageInput.value.length} / 5000`;
-    });
-
-    contactForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      sendButton.disabled = true;
-      formStatus.textContent = "Sending your note...";
-      formStatus.style.color = "var(--muted)";
-
-      try {
-        const formData = Object.fromEntries(new FormData(contactForm));
-        formData.name = formData.name.trim();
-        formData.message = formData.message.trim();
-        const response = await fetch("https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net/api/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
-        });
-
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({}));
-          throw new Error(result.error || "Unable to send your note.");
-        }
-
-        contactForm.reset();
-        optionalEmail.classList.remove("is-visible");
-        emailInput.disabled = true;
-        emailInput.required = false;
-        messageCount.textContent = "0 / 5000";
-        formStatus.textContent = "Sent. Thanks for reaching out.";
-        formStatus.style.color = "var(--accent-2)";
-      } catch (error) {
-        formStatus.textContent = error.message;
-        formStatus.style.color = "#ff8e9e";
-      } finally {
-        sendButton.disabled = false;
-      }
-    });
-
-    window.addEventListener("load", () => {
-      window.setTimeout(() => loader.classList.add("is-hidden"), 500);
-    });
-  </script>
-
-  <footer>
-    <div class="container">© 2026  Name. Built with HTML and CSS.</div>
-  </footer>
+  <footer><div class="wrap">© 2026 Forlab. Built for the joy of understanding.</div></footer>
 </body>
 </html>

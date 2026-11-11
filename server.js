@@ -1,12 +1,9 @@
 import express from "express";
 import crypto from "node:crypto";
-import { execFile } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { MongoClient, ObjectId } from "mongodb";
 
-const execFileAsync = promisify(execFile);
 const app = express();
 const port = process.env.PORT || 3000;
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -14,7 +11,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const allowedOrigins = new Set([
   "https://forlab.me",
   "https://www.forlab.me",
-  "https://socialdownload.forlab.me",
+  "https://interactive.forlab.me",
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
@@ -164,108 +161,6 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-app.post("/api/extract", (req, res) => {
-  const { url } = req.body ?? {};
-
-  if (!url || typeof url !== "string" || !url.trim()) {
-    return res.status(400).json({ error: "Media URL is required" });
-  }
-
-  let mediaUrl;
-  try {
-    mediaUrl = new URL(url.trim());
-  } catch {
-    return res.status(400).json({ error: "Enter a valid media URL." });
-  }
-
-  if (!["http:", "https:"].includes(mediaUrl.protocol)) {
-    return res.status(400).json({ error: "Only HTTP and HTTPS URLs are supported." });
-  }
-
-  const isYouTube = mediaUrl.hostname === "youtu.be" ||
-      mediaUrl.hostname === "www.youtube.com" ||
-      mediaUrl.hostname === "youtube.com" ||
-      mediaUrl.hostname === "m.youtube.com";
-
-  if (isYouTube) {
-    return extractYouTubeMedia(mediaUrl.href, res);
-  }
-
-  const extension = mediaUrl.pathname.match(/\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i)?.[1];
-  if (!extension) {
-    return res.status(422).json({
-      error: "This tool supports direct public media URLs only. YouTube and social post URLs must be downloaded through the platform's own tools."
-    });
-  }
-
-  return res.json({
-    title: "downloaded_media",
-    downloadUrl: mediaUrl.href,
-    ext: extension.toLowerCase()
-  });
-});
-
-async function extractYouTubeMedia(url, res) {
-  try {
-    const ytDlpPath = path.resolve(currentDirectory, "yt-dlp");
-    const cookiesPath = path.resolve(currentDirectory, "cookies.txt");
-
-    const { stdout } = await execFileAsync(
-        ytDlpPath,
-        [
-          "--dump-single-json",
-          "--no-playlist",
-          "--no-warnings",
-          "--skip-download",
-          "--js-runtimes", "node",
-          "--cookies", cookiesPath,
-          "--extractor-args", "youtube:player_client=android,web",
-          "--geo-bypass-country", "JO",
-          "-f", "best[height<=1080]/best",
-          url
-        ],
-        {
-          timeout: 30000,
-          maxBuffer: 15 * 1024 * 1024
-        }
-    );
-
-    const jsonStart = stdout.indexOf("{");
-    const jsonEnd = stdout.lastIndexOf("}");
-
-    if (jsonStart === -1 || jsonEnd === -1) {
-      return res.status(422).json({ error: "Invalid response format from extractor." });
-    }
-
-    const info = JSON.parse(stdout.substring(jsonStart, jsonEnd + 1));
-
-    const formats = info.formats || [];
-    const progressiveFormats = formats.filter(f => f.vcodec !== 'none' && f.acodec !== 'none');
-
-    const bestFormat = progressiveFormats.length > 0
-        ? progressiveFormats[progressiveFormats.length - 1]
-        : (info.requested_formats?.[0] || info);
-
-    if (!bestFormat || !bestFormat.url) {
-      return res.status(422).json({ error: "No downloadable public stream found." });
-    }
-
-    return res.json({
-      title: info.title || "downloaded_media",
-      downloadUrl: bestFormat.url,
-      thumbnail: info.thumbnail,
-      ext: bestFormat.ext || "mp4"
-    });
-
-  } catch (error) {
-    console.error("yt-dlp exec error:", error.stderr || error.stdout || error.message);
-
-    return res.status(422).json({
-      error: error.stderr || error.message || "Failed to process video link."
-    });
-  }
-}
-
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body ?? {};
 
@@ -346,8 +241,6 @@ app.delete("/api/admin/messages", requireAdmin, async (req, res) => {
     return res.status(500).json({ error: "Unable to delete messages" });
   }
 });
-
-app.use(express.static(path.join(currentDirectory, "socialdownload")));
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });

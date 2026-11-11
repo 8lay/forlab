@@ -1,12 +1,7 @@
 ﻿node_modules/
 .idea/
-yt-dlp.exe
 .env
 .env.*
 !.env.example
 npm-debug.log*
 .DS_Store
-
-cookies.txt
-yt-dlp
-!yt-dlp

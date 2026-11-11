@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speak the machine — Forlab</title>
+  <style>
+    :root { --ink:#122033; --muted:#718096; --paper:#f7f9fc; --blue:#2878f0; --mint:#2ec9a6; --yellow:#ffd35a; --line:rgba(18,32,51,.1); }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:radial-gradient(circle at 85% 4%,#dce8ff,transparent 28rem),var(--paper); font:16px/1.6 Inter,system-ui,sans-serif; }
+    a { color:inherit; text-decoration:none; } .wrap { width:min(920px,calc(100% - 40px)); margin:auto; } header { display:flex; justify-content:space-between; padding:28px 0; } .logo { font-weight:900; letter-spacing:-.06em; font-size:1.3rem; } .logo i { color:var(--blue); font-style:normal; } .back { color:var(--muted); }
+    main { padding:55px 0 110px; } .meta { color:var(--blue); font-size:.78rem; font-weight:900; letter-spacing:.15em; text-transform:uppercase; } h1 { margin:12px 0; font-size:clamp(3rem,8vw,6.6rem); line-height:.9; letter-spacing:-.09em; } .intro { max-width:620px; color:var(--muted); font-size:1.12rem; }
+    .scene { position:relative; min-height:370px; display:grid; place-items:center; margin:55px 0 35px; border:1px solid var(--line); border-radius:36px; overflow:hidden; background:linear-gradient(145deg,#172e55,#244a88); box-shadow:0 30px 90px rgba(38,65,103,.2); }
+    .scene::before,.scene::after { content:""; position:absolute; border:1px solid rgba(255,255,255,.2); border-radius:50%; } .scene::before { width:510px; height:180px; transform:rotate(22deg); } .scene::after { width:430px; height:230px; transform:rotate(-30deg); }
+    .machine { position:relative; z-index:1; width:230px; padding:27px 22px; border:1px solid rgba(255,255,255,.5); border-radius:26px; background:rgba(255,255,255,.13); box-shadow:0 20px 50px rgba(0,0,0,.2); backdrop-filter:blur(14px); text-align:center; color:white; }
+    .machine-screen { display:grid; place-items:center; height:100px; margin-bottom:18px; border-radius:18px; background:#0d1b33; color:var(--mint); font-size:2.7rem; font-weight:900; } .machine strong { font-size:1.2rem; } .machine small { display:block; color:#b9c9e6; }
+    .word { position:absolute; z-index:2; padding:8px 13px; border-radius:12px; background:white; color:var(--ink); font-weight:900; box-shadow:0 9px 22px rgba(0,0,0,.18); opacity:0; transform:translateY(25px) scale(.8); animation:float-in 1.2s cubic-bezier(.22,1,.36,1) forwards; } .word.one { top:58px; left:15%; animation-delay:.1s; } .word.two { right:15%; bottom:62px; animation-delay:.55s; } .word.three { top:30%; right:8%; animation-delay:1s; } .word.four { bottom:18%; left:9%; animation-delay:1.45s; }
+    .lesson { padding:30px; border:1px solid var(--line); border-radius:28px; background:rgba(255,255,255,.8); box-shadow:0 20px 60px rgba(38,65,103,.08); } .lesson h2 { margin:0 0 8px; font-size:2rem; letter-spacing:-.05em; } .lesson p { color:var(--muted); } .options { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:22px; } button { padding:15px 17px; border:1px solid var(--line); border-radius:15px; color:var(--ink); background:white; font:inherit; font-weight:750; text-align:left; cursor:pointer; transition:transform .25s ease,border-color .25s ease,background .25s ease; } button:hover { transform:translateY(-3px); border-color:var(--blue); } button.correct { border-color:var(--mint); background:#dff8ef; } button.wrong { border-color:#ff8c8c; background:#fff0f0; } #feedback { min-height:1.6em; margin:18px 0 0; font-weight:800; } .next { display:inline-flex; margin-top:20px; padding:12px 18px; border-radius:999px; background:var(--blue); color:white; font-weight:800; }
+    @keyframes float-in { to { opacity:1; transform:translateY(0) scale(1); } } @media(max-width:650px) { .options { grid-template-columns:1fr; } .scene { min-height:330px; } .word.one { left:5%; } .word.two { right:5%; } }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } .word { opacity:1; transform:none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header><a class="logo" href="https://forlab.me">For<i>Lab</i>.</a><a class="back" href="../">← Lectures</a></header>
+    <main>
+      <div class="meta">English for Computing · Lecture 01</div>
+      <h1>Speak the machine.</h1>
+      <p class="intro">A computer is a conversation between instructions, information, and action. Tap into the idea by watching the pieces find their place.</p>
+      <div class="scene" aria-label="Animated computer vocabulary scene">
+        <div class="word one">input</div><div class="word two">output</div><div class="word three">process</div><div class="word four">feedback</div>
+        <div class="machine"><div class="machine-screen">↔</div><strong>COMPUTER</strong><small>input · process · output</small></div>
+      </div>
+      <section class="lesson">
+        <h2>Quick check</h2>
+        <p>A keyboard sends information into a computer. In this model, what is the keyboard’s role?</p>
+        <div class="options">
+          <button type="button" data-answer="wrong">The output</button>
+          <button type="button" data-answer="correct">The input</button>
+          <button type="button" data-answer="wrong">The process</button>
+          <button type="button" data-answer="wrong">The feedback</button>
+        </div>
+        <div id="feedback" role="status"></div>
+        <a class="next" href="../">Back to lectures ↗</a>
+      </section>
+    </main>
+  </div>
+  <script>
+    const feedback = document.querySelector("#feedback");
+    document.querySelectorAll("[data-answer]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-answer]").forEach((option) => option.classList.remove("correct", "wrong"));
+        const correct = button.dataset.answer === "correct";
+        button.classList.add(correct ? "correct" : "wrong");
+        feedback.textContent = correct ? "Exactly. Input is information entering the system." : "Not quite. Think about the direction information is travelling.";
+        feedback.style.color = correct ? "var(--mint)" : "#d45454";
+      });
+    });
+  </script>
+</body>
+</html>

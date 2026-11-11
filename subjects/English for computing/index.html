@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>English for Computing — Forlab</title>
+  <style>
+    :root { --ink:#122033; --muted:#68788f; --paper:#f7f9fc; --blue:#2878f0; --mint:#2ec9a6; --yellow:#ffd35a; --line:rgba(18,32,51,.1); }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:radial-gradient(circle at 15% 0%,#fff0bd,transparent 25rem),var(--paper); font:16px/1.6 Inter,system-ui,sans-serif; }
+    a { color:inherit; text-decoration:none; } .wrap { width:min(1100px,calc(100% - 40px)); margin:auto; } header { display:flex; justify-content:space-between; padding:28px 0; } .logo { font-weight:900; letter-spacing:-.06em; font-size:1.3rem; } .logo i { color:var(--blue); font-style:normal; } .back { color:var(--muted); }
+    main { padding:70px 0 120px; } .kicker { color:var(--blue); font-size:.78rem; font-weight:900; letter-spacing:.15em; text-transform:uppercase; } h1 { max-width:700px; margin:14px 0; font-size:clamp(3rem,8vw,6.3rem); line-height:.9; letter-spacing:-.09em; } .intro { max-width:620px; color:var(--muted); font-size:1.1rem; }
+    .lecture-list { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:60px; } .lecture { min-height:250px; padding:25px; border:1px solid var(--line); border-radius:28px; background:rgba(255,255,255,.8); box-shadow:0 25px 70px rgba(38,65,103,.1); transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s ease; } .lecture:hover { transform:translateY(-8px) rotate(-.5deg); box-shadow:0 35px 80px rgba(38,65,103,.17); }
+    .number { display:flex; justify-content:space-between; color:var(--blue); font-weight:900; } .lecture h2 { margin:34px 0 7px; font-size:1.5rem; } .lecture p { margin:0; color:var(--muted); } .arrow { display:inline-block; margin-top:24px; color:var(--blue); font-weight:800; }
+    .note { margin-top:25px; padding:18px 20px; border-radius:18px; background:#dff8ef; color:#176c59; } @media(max-width:720px) { .lecture-list { grid-template-columns:1fr; } main { padding-top:45px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header><a class="logo" href="https://forlab.me">For<i>Lab</i>.</a><a class="back" href="https://interactive.forlab.me/subjects/">← All subjects</a></header>
+    <main>
+      <div class="kicker">English for Computing</div>
+      <h1>Words are tools too.</h1>
+      <p class="intro">Choose a lecture and learn the language that helps technical ideas travel clearly from one mind to another.</p>
+      <div class="lecture-list">
+        <a class="lecture" href="speak-the-machine/"><div class="number"><span>LECTURE 01</span><span>08 min</span></div><h2>Speak the machine</h2><p>Decode the essential vocabulary of hardware, software, and the spaces between them.</p><span class="arrow">Enter lecture ↗</span></a>
+        <a class="lecture" href="#coming-soon"><div class="number"><span>LECTURE 02</span><span>10 min</span></div><h2>Build a clear explanation</h2><p>Turn a complex technical process into a story anyone can follow.</p><span class="arrow">Enter lecture ↗</span></a>
+        <a class="lecture" href="#coming-soon"><div class="number"><span>LECTURE 03</span><span>07 min</span></div><h2>Precision matters</h2><p>Explore the small differences between words that change the meaning of an instruction.</p><span class="arrow">Enter lecture ↗</span></a>
+        <a class="lecture" href="#coming-soon"><div class="number"><span>LECTURE 04</span><span>09 min</span></div><h2>Ask better questions</h2><p>Practice the language of debugging, collaboration, and curious problem-solving.</p><span class="arrow">Enter lecture ↗</span></a>
+      </div>
+      <div class="note" id="coming-soon">Interactive lecture scenes are being prepared. The subject path is ready for its first animation.</div>
+    </main>
+  </div>
+</body>
+</html>
