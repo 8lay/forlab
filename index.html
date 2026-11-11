@@ -81,6 +81,28 @@
     .step { flex: 1; padding: 13px 15px; border: 1px solid rgba(255,255,255,.15); border-radius: 16px; background: rgba(255,255,255,.06); color: #d9e3f2; font-size: .9rem; }
     .step strong { display: block; color: white; font-size: 1.3rem; }
     footer { padding: 25px 0 45px; color: var(--muted); font-size: .9rem; }
+    .loader { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: hidden; background: var(--paper); transition: opacity .7s cubic-bezier(.22,1,.36,1), visibility .7s ease; }
+    .loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader::before, .loader::after { content: ""; position: absolute; border-radius: 50%; filter: blur(2px); }
+    .loader::before { width: 430px; height: 430px; background: radial-gradient(circle, rgba(40,120,240,.12), transparent 68%); }
+    .loader::after { width: 280px; height: 280px; background: radial-gradient(circle, rgba(46,201,166,.14), transparent 68%); transform: translate(120px, -100px); }
+    .loader-inner { position: relative; z-index: 1; width: min(340px, calc(100% - 48px)); text-align: center; }
+    .loader-mark { position: relative; width: 104px; height: 104px; margin: 0 auto 28px; display: grid; place-items: center; border-radius: 32px 42px 38px 45px; color: white; font-size: 2rem; background: linear-gradient(145deg, #2878f0, #6b5cff 68%, #bda9ff); box-shadow: 18px 22px 45px rgba(40,120,240,.25), inset -10px -12px 18px rgba(12,44,124,.2); animation: loader-breathe 2.8s ease-in-out infinite; }
+    .loader-mark::before, .loader-mark::after { content: ""; position: absolute; border: 1px solid rgba(40,120,240,.28); border-radius: 50%; pointer-events: none; }
+    .loader-mark::before { width: 164px; height: 58px; transform: rotate(28deg); }
+    .loader-mark::after { width: 190px; height: 84px; border-color: rgba(46,201,166,.3); transform: rotate(-32deg); }
+    .loader-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 5px rgba(46,201,166,.13), 0 0 18px rgba(46,201,166,.5); animation: loader-orbit 2.8s linear infinite; }
+    .loader-dot.one { top: 4px; left: 47px; }
+    .loader-dot.two { right: 3px; bottom: 23px; animation-delay: -.9s; background: var(--yellow); box-shadow: 0 0 0 5px rgba(255,211,90,.16), 0 0 18px rgba(255,211,90,.5); }
+    .loader-dot.three { bottom: 3px; left: 22px; animation-delay: -1.8s; }
+    .loader-brand { margin: 0; font-size: 1.25rem; font-weight: 900; letter-spacing: -.06em; }
+    .loader-brand i { color: var(--blue); font-style: normal; }
+    .loader-copy { margin: 7px 0 22px; color: var(--muted); font-size: .9rem; }
+    .loader-track { height: 4px; overflow: hidden; border-radius: 99px; background: rgba(18,32,51,.1); }
+    .loader-progress { width: 35%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--mint)); box-shadow: 0 0 14px rgba(40,120,240,.35); animation: loader-progress 1.2s cubic-bezier(.22,1,.36,1) infinite; }
+    @keyframes loader-breathe { 0%, 100% { transform: translateY(0) rotate(-4deg) scale(1); } 50% { transform: translateY(-8px) rotate(4deg) scale(1.04); } }
+    @keyframes loader-orbit { 0% { transform: rotate(0deg) translateX(83px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(83px) rotate(-360deg); } }
+    @keyframes loader-progress { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(310%); } }
     @keyframes breathe { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-13px) rotate(3deg); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     @media (max-width: 760px) {
@@ -94,6 +116,19 @@
   </style>
 </head>
 <body>
+  <div class="loader" id="loader" role="status" aria-label="Loading Forlab">
+    <div class="loader-inner">
+      <div class="loader-mark" aria-hidden="true">
+        ✦
+        <span class="loader-dot one"></span>
+        <span class="loader-dot two"></span>
+        <span class="loader-dot three"></span>
+      </div>
+      <p class="loader-brand">For<i>Lab</i>.</p>
+      <p class="loader-copy">Warming up your next small win</p>
+      <div class="loader-track" aria-hidden="true"><div class="loader-progress"></div></div>
+    </div>
+  </div>
   <nav class="nav">
     <div class="wrap nav-inner">
       <a class="logo" href="/">For<i>Lab</i>.</a>
@@ -146,5 +181,13 @@
     </section>
   </main>
   <footer><div class="wrap">© 2026 Forlab. Built for the joy of understanding.</div></footer>
+  <script>
+    const loader = document.querySelector("#loader");
+    const loaderStartedAt = performance.now();
+    window.addEventListener("load", () => {
+      const remaining = Math.max(0, 900 - (performance.now() - loaderStartedAt));
+      window.setTimeout(() => loader.classList.add("is-hidden"), remaining);
+    });
+  </script>
 </body>
 </html>
