@@ -88,6 +88,7 @@
     .contact-form input, .contact-form textarea { width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: rgba(247,249,252,.8); font: inherit; }
     .contact-form textarea { min-height: 145px; resize: vertical; }
     .contact-form input:focus, .contact-form textarea:focus { outline: 2px solid var(--blue); outline-offset: 2px; border-color: transparent; }
+    .contact-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
     .email-choice { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: .92rem; }
     .email-choice input { width: auto; accent-color: var(--blue); }
     .optional-email { max-height: 0; overflow: hidden; opacity: 0; transform: translateY(-8px); transition: max-height .35s ease, opacity .35s ease, transform .35s ease; }
@@ -200,6 +201,7 @@
         <h2>Have a thought to share?</h2>
         <p>Send a note, suggest a subject, or tell me what you want to learn next.</p>
         <form class="contact-form" id="contact-form">
+          <div class="contact-trap" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
           <label for="name">Name</label>
           <input id="name" name="name" autocomplete="name" required>
           <div class="email-choice">Want a reply by email? <span>(optional)</span></div>

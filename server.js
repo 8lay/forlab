@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,13 @@ import { MongoClient, ObjectId } from "mongodb";
 const app = express();
 const port = process.env.PORT || 3000;
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const messageLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many messages. Please try again later." }
+});
 
 const allowedOrigins = new Set([
   "https://forlab.me",
@@ -22,6 +30,7 @@ const client = process.env.MONGODB_URI
 let clientPromise;
 
 app.use(express.json({ limit: "20kb" }));
+app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -107,12 +116,16 @@ app.get("/api/messages", (_req, res) => {
   res.status(405).json({ error: "Method not allowed" });
 });
 
-app.post("/api/messages", async (req, res) => {
+app.post("/api/messages", messageLimiter, async (req, res) => {
+  const { name, email, message, website } = req.body ?? {};
+
+  if (typeof website === "string" && website.trim()) {
+    return res.status(400).json({ error: "Unable to send message" });
+  }
+
   if (!client) {
     return res.status(500).json({ error: "Database is not configured" });
   }
-
-  const { name, email, message } = req.body ?? {};
 
   if (
       typeof name !== "string" ||
