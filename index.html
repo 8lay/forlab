@@ -80,6 +80,20 @@
     .steps { display: flex; gap: 10px; margin: 26px 0 30px; }
     .step { flex: 1; padding: 13px 15px; border: 1px solid rgba(255,255,255,.15); border-radius: 16px; background: rgba(255,255,255,.06); color: #d9e3f2; font-size: .9rem; }
     .step strong { display: block; color: white; font-size: 1.3rem; }
+    .contact { width: min(760px, 100%); margin: 0 auto; padding: 40px; border: 1px solid var(--line); border-radius: 30px; background: var(--card); box-shadow: var(--shadow); }
+    .contact h2 { margin: 0 0 8px; font-size: clamp(2.2rem, 5vw, 4rem); line-height: .95; letter-spacing: -.08em; }
+    .contact > p { margin: 0; color: var(--muted); }
+    .contact-form { margin-top: 28px; }
+    .contact-form label { display: block; margin: 15px 0 7px; font-weight: 800; }
+    .contact-form input, .contact-form textarea { width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: rgba(247,249,252,.8); font: inherit; }
+    .contact-form textarea { min-height: 145px; resize: vertical; }
+    .contact-form input:focus, .contact-form textarea:focus { outline: 2px solid var(--blue); outline-offset: 2px; border-color: transparent; }
+    .email-choice { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: .92rem; }
+    .email-choice input { width: auto; accent-color: var(--blue); }
+    .optional-email { max-height: 0; overflow: hidden; opacity: 0; transform: translateY(-8px); transition: max-height .35s ease, opacity .35s ease, transform .35s ease; }
+    .optional-email.is-visible { max-height: 110px; opacity: 1; transform: translateY(0); }
+    .message-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .82rem; }
+    .form-status { min-height: 1.6em; margin: 14px 0 0; }
     footer { padding: 25px 0 45px; color: var(--muted); font-size: .9rem; }
     .loader { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: hidden; background: var(--paper); transition: opacity .7s cubic-bezier(.22,1,.36,1), visibility .7s ease; }
     .loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -132,7 +146,7 @@
   <nav class="nav">
     <div class="wrap nav-inner">
       <a class="logo" href="/">For<i>Lab</i>.</a>
-      <div class="nav-links"><a href="#why">Why Forlab</a><a href="#path">Your path</a><a href="https://github.com/8lay">GitHub ↗</a></div>
+      <div class="nav-links"><a href="#why">Why Forlab</a><a href="#path">Your path</a><a href="#contact">Contact</a><a href="https://github.com/8lay">GitHub ↗</a></div>
       <a class="pill light" href="https://interactive.forlab.me/subjects/">Start learning <span aria-hidden="true">↗</span></a>
     </div>
   </nav>
@@ -179,9 +193,91 @@
         </div>
       </div>
     </section>
+
+    <section class="wrap" id="contact">
+      <div class="contact">
+        <div class="kicker">Say hello</div>
+        <h2>Have a thought to share?</h2>
+        <p>Send a note, suggest a subject, or tell me what you want to learn next.</p>
+        <form class="contact-form" id="contact-form">
+          <label for="name">Name</label>
+          <input id="name" name="name" autocomplete="name" required>
+          <div class="email-choice">Want a reply by email? <span>(optional)</span></div>
+          <label class="email-choice"><input name="email-choice" type="radio" value="no" checked> No, just leave my message</label>
+          <label class="email-choice"><input id="share-email" name="email-choice" type="radio" value="yes"> Yes, I want a reply</label>
+          <div class="optional-email" id="optional-email">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" disabled>
+          </div>
+          <label for="message">Message</label>
+          <textarea id="message" name="message" maxlength="5000" required></textarea>
+          <div class="message-meta"><span>Say whatever is on your mind.</span><span id="message-count">0 / 5000</span></div>
+          <button class="pill blue" type="submit">Send message <span aria-hidden="true">↗</span></button>
+          <p class="form-status" id="form-status" role="status"></p>
+        </form>
+      </div>
+    </section>
   </main>
   <footer><div class="wrap">© 2026 Forlab. Built for the joy of understanding.</div></footer>
   <script>
+    const contactForm = document.querySelector("#contact-form");
+    const formStatus = document.querySelector("#form-status");
+    const shareEmail = document.querySelector("#share-email");
+    const optionalEmail = document.querySelector("#optional-email");
+    const emailInput = document.querySelector("#email");
+    const messageInput = document.querySelector("#message");
+    const messageCount = document.querySelector("#message-count");
+    const sendButton = contactForm.querySelector("button");
+
+    document.querySelectorAll('input[name="email-choice"]').forEach((choice) => {
+      choice.addEventListener("change", () => {
+        optionalEmail.classList.toggle("is-visible", shareEmail.checked);
+        emailInput.disabled = !shareEmail.checked;
+        emailInput.required = shareEmail.checked;
+        if (shareEmail.checked) emailInput.focus();
+      });
+    });
+
+    messageInput.addEventListener("input", () => {
+      messageCount.textContent = `${messageInput.value.length} / 5000`;
+    });
+
+    contactForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      sendButton.disabled = true;
+      formStatus.textContent = "Sending your note...";
+      formStatus.style.color = "var(--muted)";
+
+      try {
+        const formData = Object.fromEntries(new FormData(contactForm));
+        formData.name = formData.name.trim();
+        formData.message = formData.message.trim();
+        const response = await fetch("https://forlab-api-8lay-ecb3cmfpd7gxbmba.italynorth-01.azurewebsites.net/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.error || "Unable to send your note.");
+        }
+
+        contactForm.reset();
+        optionalEmail.classList.remove("is-visible");
+        emailInput.disabled = true;
+        emailInput.required = false;
+        messageCount.textContent = "0 / 5000";
+        formStatus.textContent = "Sent. Thanks for reaching out.";
+        formStatus.style.color = "var(--mint)";
+      } catch (error) {
+        formStatus.textContent = error.message;
+        formStatus.style.color = "#d45454";
+      } finally {
+        sendButton.disabled = false;
+      }
+    });
+
     const loader = document.querySelector("#loader");
     const loaderStartedAt = performance.now();
     window.addEventListener("load", () => {
